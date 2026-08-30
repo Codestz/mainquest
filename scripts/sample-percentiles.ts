@@ -19,7 +19,7 @@
  * production uses.
  */
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -48,9 +48,36 @@ const MIN_ACTIVITY = arg('min-activity', 20);
 const RAW = arg('raw', 'build/sample.jsonl');
 /** The same rows minus `login` — committed as provenance for the table. */
 const ANON = arg('anon', 'data/sample.anon.jsonl');
+/** Checkpoint of the sampled logins, so a crash mid-fetch is cheap to resume. */
+const LOGINS = arg('logins', 'build/logins.txt');
+const RESUME = process.argv.includes('--resume');
 const BATCH = 50;
 /** Ids are dense, so this is roughly "accounts ever created". */
 const MAX_USER_ID = 250_000_000;
+const MAX_REPO_ID = 1_000_000_000;
+
+/**
+ * Which population the table describes. This is the frame, and it decides what
+ * the percentiles mean more than any other setting here.
+ *
+ *   users -- uniform over account ids. Honest, and aimed at the wrong
+ *            population: it returns the median GitHub account, which is
+ *            dormant. The first real sample came back with `reviews`
+ *            degenerate (p50 = p90 = 0; 5% of retained accounts gave one).
+ *
+ *   repos -- uniform over repository ids, forks dropped, kept only where the
+ *            repo has >=2 contributors, then those contributors. Review is a
+ *            collaborative act: it cannot appear in a population of solo
+ *            repos, so this samples people who are at least in a position to
+ *            do it.
+ *
+ * `repos` is SIZE-BIASED and deliberately so: someone who contributes to ten
+ * repos has ten chances to be drawn. That over-represents active developers,
+ * which is the population that installs a character sheet -- but it is a bias,
+ * it is not "the average developer", and the frame string records it.
+ */
+const FRAME = arg('frame', 'repos');
+const MIN_CONTRIBUTORS = arg('min-contributors', 2);
 
 const FROM = `${CAMPAIGN}-01-01T00:00:00Z`;
 const TO = `${CAMPAIGN}-12-31T23:59:59Z`;
@@ -84,13 +111,80 @@ const gh = async (args: string[], body?: string): Promise<unknown> => {
     // and execFile throws away a perfectly good partial response. Recover it.
     const out = (err as { stdout?: string }).stdout;
     if (out) {
-      try { return JSON.parse(String(out)); } catch { /* genuinely broken */ }
+      try { return JSON.parse(String(out)); } catch { /* not JSON: see below */ }
     }
     throw err;
   } finally {
     if (file) rmSync(file, { force: true });
   }
 };
+
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * The PRIMARY rate limit (5,000 REST calls/hour) is not a blip to retry — it is
+ * a wall to wait at. A frame=repos run costs ~4 REST calls per login, so a few
+ * thousand contributors crosses it several times and a run that treats it as a
+ * transient error just burns its retries and drops the batch.
+ */
+const isRateLimited = (err: unknown): boolean => {
+  const e = err as { stderr?: string; stdout?: string };
+  return /API rate limit exceeded|rate limit exceeded for/i.test(`${e.stderr ?? ''}${e.stdout ?? ''}`);
+};
+
+/** Sleep until the core budget resets, then carry on. */
+async function waitForReset(): Promise<void> {
+  try {
+    const rl = (await gh(['api', '/rate_limit'])) as {
+      resources: { core: { reset: number; remaining: number } };
+    };
+    const waitMs = Math.max(0, rl.resources.core.reset * 1000 - Date.now()) + 5000;
+    const mins = Math.ceil(waitMs / 60000);
+    process.stderr.write(`\n  rate limit reached — waiting ${mins}m for reset\n`);
+    await sleep(waitMs);
+  } catch {
+    await sleep(60_000);
+  }
+}
+
+/** 502/503/504 arrive as an nginx HTML page, not JSON. */
+const isTransient = (err: unknown): boolean => {
+  const e = err as { stderr?: string; stdout?: string };
+  const text = `${e.stderr ?? ''}${e.stdout ?? ''}`;
+  return /HTTP 50[234]|Bad Gateway|Service Unavailable|Gateway Time-?out|secondary rate limit|abuse detection/i
+    .test(text);
+};
+
+/**
+ * A sampling run is minutes long and makes hundreds of calls, so it WILL meet a
+ * transient failure. The first repo-frame pilot died on a single 502 after the
+ * expensive REST phase had already completed, and took the whole sample with
+ * it. Retry the blips; give up loudly on anything else.
+ */
+async function withRetry<T>(label: string, fn: () => Promise<T>, tries = 5): Promise<T | null> {
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (isRateLimited(err)) {
+        await waitForReset();
+        i--; // waiting is not a failed attempt
+        continue;
+      }
+      if (!isTransient(err) || i === tries - 1) {
+        // Empty repos answer 204 with no body, which surfaces as a JSON parse
+        // failure. That is the common case here, not an error worth printing.
+        const msg = (err as Error).message ?? '';
+        if (!/Unexpected end of JSON input/.test(msg)) {
+          process.stderr.write(`\n  ! ${label}: ${msg.slice(0, 120)}\n`);
+        }
+        return null;
+      }
+      await sleep(2 ** i * 1000);
+    }
+  }
+  return null;
+}
 
 /** Uniform over the id space: random offsets, one page of 100 each. */
 async function sampleLogins(n: number): Promise<string[]> {
@@ -108,6 +202,53 @@ async function sampleLogins(n: number): Promise<string[]> {
       // A dead id range or a transient 5xx costs one call, not the run.
     }
     process.stderr.write(`\r  logins ${out.size}/${n}`);
+  }
+  process.stderr.write('\n');
+  return [...out].slice(0, n);
+}
+
+/**
+ * Uniform over repo ids -> non-fork repos with real collaboration -> their
+ * contributors. Costs one REST call per candidate repo, which is the price of
+ * reaching a population where reviews exist at all.
+ */
+async function sampleViaRepos(n: number): Promise<string[]> {
+  const out = new Set<string>();
+  let pages = 0, repos = 0, kept = 0, lastCheckpoint = 0;
+  while (out.size < n && pages < n) {
+    pages++;
+    const page = await withRetry('repositories', () => gh([
+      'api', `/repositories?since=${Math.floor(Math.random() * MAX_REPO_ID)}&per_page=100`,
+    ]) as Promise<Array<{ full_name: string; fork: boolean }>>);
+    if (!page) continue;
+
+    // Forks carry their parent's contributor list and would double-count.
+    const candidates = page.filter((r) => !r.fork).slice(0, 12);
+    for (const r of candidates) {
+      if (out.size >= n) break;
+      repos++;
+      // Empty repos answer 204, disabled ones 403, and stats that are still
+      // being computed answer 202 with no body. All are skips, not failures.
+      const cs = await withRetry(r.full_name, () => gh([
+        'api', `/repos/${r.full_name}/contributors?per_page=30`,
+      ]) as Promise<Array<{ login: string; type: string }> | null>, 2);
+      if (cs && cs.length >= MIN_CONTRIBUTORS) {
+        kept++;
+        for (const c of cs) if (c.type === 'User') out.add(c.login);
+      }
+      process.stderr.write(`\r  repos ${repos} (kept ${kept}) -> logins ${out.size}/${n}`);
+      // Checkpoint continuously: this phase runs for hours across rate-limit
+      // waits, and losing it to a crash means starting over.
+      //
+      // NOT `out.size % 50 === 0` -- the set grows by a whole repo's
+      // contributor list at a time (3-30 at once), so exact multiples are
+      // mostly skipped and the checkpoint silently falls hundreds behind.
+      if (out.size - lastCheckpoint >= 50) {
+        lastCheckpoint = out.size;
+        mkdirSync(dirname(LOGINS), { recursive: true });
+        writeFileSync(LOGINS, [...out].join('\n') + '\n');
+      }
+    }
   }
   process.stderr.write('\n');
   return [...out].slice(0, n);
@@ -137,7 +278,9 @@ function longestStreak(weeks: Array<{ contributionDays: Array<{ contributionCoun
   return best;
 }
 
-async function fetchBatch(logins: string[]): Promise<Row[]> {
+interface BatchResult { rows: Row[]; overLimit: boolean }
+
+async function fetchBatch(logins: string[]): Promise<BatchResult> {
   const aliases = logins
     .map((l, i) => `u${i}:user(login:${JSON.stringify(l)}){...M}`)
     .join('\n');
@@ -146,11 +289,29 @@ async function fetchBatch(logins: string[]): Promise<Row[]> {
 
   const res = (await gh(['api', 'graphql', '--input', '-'], body)) as {
     data?: Record<string, unknown>;
+    errors?: Array<{ type?: string; message?: string }>;
   };
+
+  /**
+   * GraphQL answers 200 with `data` full of nulls and the reason in `errors`.
+   * Reading `res.data` alone turns a total failure into an empty array and a
+   * clean exit — which is exactly what happened: a 250-login run reported
+   * success having fetched nothing.
+   */
+  const errors = res.errors ?? [];
+  const overLimit = errors.some((e) => e.type === 'RESOURCE_LIMITS_EXCEEDED');
+  const other = errors.filter(
+    (e) => e.type !== 'RESOURCE_LIMITS_EXCEEDED' && !/Could not resolve to a User/.test(e.message ?? ''),
+  );
+  if (other.length) {
+    process.stderr.write(`\n  ! graphql: ${other[0]!.type ?? ''} ${other[0]!.message?.slice(0, 100)}\n`);
+  }
+
   const data = res.data ?? {};
   const rows: Row[] = [];
   for (const [k, v] of Object.entries(data)) {
-    // A null node is a deleted or renamed account between sampling and fetch.
+    // A null node is a deleted or renamed account, or a field the resource
+    // limit refused to compute.
     if (k === 'rateLimit' || !v) continue;
     const u = v as {
       login: string;
@@ -175,7 +336,36 @@ async function fetchBatch(logins: string[]): Promise<Row[]> {
       total: c.contributionCalendar.totalContributions,
     });
   }
-  return rows;
+  return { rows, overLimit };
+}
+
+/**
+ * GitHub enforces a per-query COMPUTE ceiling (RESOURCE_LIMITS_EXCEEDED)
+ * separate from the 5,000-point budget, and it depends on how active the users
+ * in the batch are — not on how many there are. A batch of 50 dormant accounts
+ * is fine; 50 real contributors is refused outright, every node null.
+ *
+ * That is why the first frame appeared to work at batch=50: it was sampling
+ * dormant accounts. Nothing about the query changed, only the population.
+ *
+ * So the batch size cannot be a constant. Halve on refusal and recurse; a
+ * single user that still cannot be computed is dropped rather than retried
+ * forever.
+ */
+async function fetchAdaptive(logins: string[], depth = 0): Promise<Row[]> {
+  const got = await withRetry(`batch[${logins.length}]`, () => fetchBatch(logins));
+  if (!got) return [];
+  if (!got.overLimit) return got.rows;
+  if (logins.length === 1) {
+    process.stderr.write(`\n  ! ${logins[0]} exceeds the per-query limit alone; dropped\n`);
+    return [];
+  }
+  const mid = Math.ceil(logins.length / 2);
+  process.stderr.write(`\r  over limit at ${logins.length}, splitting${' '.repeat(20)}`);
+  return [
+    ...(await fetchAdaptive(logins.slice(0, mid), depth + 1)),
+    ...(await fetchAdaptive(logins.slice(mid), depth + 1)),
+  ];
 }
 
 const STOPS = [10, 25, 50, 75, 90, 99] as const;
@@ -187,14 +377,36 @@ function percentiles(values: number[]): Record<string, number> {
 }
 
 async function main(): Promise<void> {
-  console.error(`sampling ${N} logins uniformly over the id space…`);
-  const logins = await sampleLogins(N);
+  let logins: string[];
+  if (RESUME && existsSync(LOGINS)) {
+    logins = readFileSync(LOGINS, 'utf8').split('\n').filter(Boolean);
+    console.error(`resuming from ${LOGINS} (${logins.length} logins)`);
+  } else {
+    console.error(`sampling ${N} logins · frame=${FRAME}`);
+    logins = FRAME === 'repos' ? await sampleViaRepos(N) : await sampleLogins(N);
+  }
+
+  // Checkpoint before the fetch phase. Collecting logins under frame=repos
+  // costs one REST call per candidate repo — by far the expensive half — and a
+  // crash during fetch must not send you back for it.
+  mkdirSync(dirname(LOGINS), { recursive: true });
+  writeFileSync(LOGINS, logins.join('\n') + '\n');
+  console.error(`  logins checkpointed -> ${LOGINS}`);
 
   console.error(`fetching contributions for campaign ${CAMPAIGN}…`);
   const rows: Row[] = [];
+  let skipped = 0;
   for (let i = 0; i < logins.length; i += BATCH) {
-    rows.push(...(await fetchBatch(logins.slice(i, i + BATCH))));
-    process.stderr.write(`\r  fetched ${rows.length}/${logins.length}`);
+    const batch = logins.slice(i, i + BATCH);
+    const got = await fetchAdaptive(batch);
+    rows.push(...got);
+    skipped += batch.length - got.length;
+    process.stderr.write(`\r  fetched ${rows.length}/${logins.length}${skipped ? ` (dropped ${skipped})` : ''}`);
+  }
+
+  if (rows.length === 0) {
+    console.error('\nno rows fetched — refusing to write a distribution from nothing');
+    process.exit(1);
   }
   process.stderr.write('\n');
 
@@ -237,8 +449,13 @@ async function main(): Promise<void> {
     minActivity: MIN_ACTIVITY,
     retainedFraction: Number((active.length / Math.max(rows.length, 1)).toFixed(4)),
     anyActivityFraction: Number((rows.filter((r) => r.total > 0).length / Math.max(rows.length, 1)).toFixed(4)),
-    frame: `uniform over GitHub account ids via /users?since, conditioned on >=${MIN_ACTIVITY} public contributions in the campaign`,
-    frameNote: 'The floor is deliberate. Unconditioned, a uniform account sample is ~92% dormant and would place every real user of this card at p99 on every metric.',
+    frameId: FRAME,
+    frame: FRAME === 'repos'
+      ? `uniform over GitHub repository ids via /repositories?since, forks dropped, repos with >=${MIN_CONTRIBUTORS} contributors kept, then those contributors; conditioned on >=${MIN_ACTIVITY} public contributions in the campaign`
+      : `uniform over GitHub account ids via /users?since, conditioned on >=${MIN_ACTIVITY} public contributions in the campaign`,
+    frameNote: FRAME === 'repos'
+      ? 'Size-biased on purpose: contributing to more repos means more chances to be drawn. This over-represents active developers, which is the population that installs a character sheet — but it is a bias, and this is not "the average developer".'
+      : 'The floor is deliberate. Unconditioned, a uniform account sample is ~90% dormant and would place every real user of this card at p99 on every metric.',
     caveat: 'Public activity only. `merges` is not sampled here — it needs one search call per user (see docs/02 Tier 1).',
     metrics: Object.fromEntries(
       METRICS.map((m) => [m, percentiles(active.map((r) => r[m]))]),
