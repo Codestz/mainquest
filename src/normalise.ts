@@ -37,12 +37,24 @@ export const DISTRIBUTION = {
 export const IS_PLACEHOLDER = (DISTRIBUTION as { generated: string }).generated === 'PLACEHOLDER';
 
 /**
+ * Where the table stops being trustworthy. At the current sample size the top
+ * stop is driven by a handful of bot-like accounts (commits p99 = 17,535
+ * against p90 = 489), so clamping at p99 would spread most real users across
+ * almost none of the scale. The table declares its own clamp.
+ */
+const CLAMP_AT = Number(
+  String((DISTRIBUTION as { tailClampedAt?: string }).tailClampedAt ?? 'p99').slice(1),
+);
+
+/**
  * Piecewise-linear interpolation between the published stops. Below p10 and
- * above p99 it clamps: the tails are where a sampled table lies most, and
- * nothing on the card should depend on their shape.
+ * above the clamp it saturates: the tails are where a sampled table lies most,
+ * and nothing on the card should depend on their shape.
  */
 export function percentileOf(value: number, m: Stops): number {
-  const pts: Array<[number, number]> = STOPS.map((p) => [m[`p${p}`], p / 100]);
+  const pts: Array<[number, number]> = STOPS
+    .filter((p) => p <= CLAMP_AT)
+    .map((p) => [m[`p${p}`], p / 100]);
   const first = pts[0]!;
   const last = pts[pts.length - 1]!;
   if (value <= first[0]) return first[0] <= 0 ? 0 : first[1] * (value / first[0]);

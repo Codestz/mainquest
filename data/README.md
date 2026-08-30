@@ -62,7 +62,26 @@ auditable and re-tunable without shipping a named dataset of 5,000 strangers'
 activity to a public repo. Re-tuning the floor is a local recompute over the
 committed file, not another run against someone else's API.
 
-### What the first real sample found
+### What is shipped now
+
+`data/percentiles.json` is the **repo-contributor pilot: n=250 sampled, 82
+retained**. Small, and shipped anyway because frame correctness beat sample
+size — under the uniform-account frame `reviews` was degenerate (p50 = p90 = 0)
+and the flagship ability, class and rank were all built on it.
+
+The upper tail is not trustworthy at this n (commits p99 = 17,535 against
+p90 = 489, from a handful of bot-like accounts), so the file declares
+`tailClampedAt: "p90"` and `percentileOf` saturates there. **Re-run
+`npm run sample` for a larger n before shipping publicly.**
+
+A 3,000-contributor run reached 1,925/2,447 fetched and then wedged for two
+hours on 43 secondary-rate-limit pauses with the GraphQL budget untouched: the
+retry loop did not count rate-limit waits against its attempt budget, so with
+four workers re-triggering the limiter it never terminated. Fixed with a
+separate `MAX_RATE_WAITS` cap. Rows are only written at the end of the run, so
+that partial work was lost — worth making incremental before the next long run.
+
+### What the first frame found
 
 5,392 accounts, campaign 2026. **`reviews` came back degenerate**: among the 219
 accounts clearing the floor, 11 (5.0%) gave a single review, so p50 = p90 = 0.

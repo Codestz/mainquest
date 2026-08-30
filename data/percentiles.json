@@ -1,62 +1,64 @@
 {
   "generated": "2026-08",
   "campaign": 2026,
-  "sampleSize": 219,
-  "sampledAccounts": 5392,
+  "sampleSize": 82,
+  "sampledAccounts": 250,
   "minActivity": 20,
-  "retainedFraction": 0.0406,
-  "anyActivityFraction": 0.1005,
-  "frame": "uniform over GitHub account ids via /users?since, conditioned on >=20 public contributions in the campaign",
-  "frameNote": "The floor is deliberate. Unconditioned, a uniform account sample is ~92% dormant and would place every real user of this card at p99 on every metric.",
-  "caveat": "Public activity only. `merges` is not sampled here — it needs one search call per user (see docs/02 Tier 1).",
+  "retainedFraction": 0.328,
+  "anyActivityFraction": 0.48,
+  "frameId": "repos",
+  "frame": "uniform over GitHub repository ids via /repositories?since, forks dropped, repos with >=2 contributors kept, then those contributors; conditioned on >=20 public contributions in the campaign",
+  "frameNote": "Size-biased on purpose: contributing to more repos means more chances to be drawn. This over-represents active developers, which is the population that installs a character sheet - but it is a bias, and this is not 'the average developer'.",
+  "caveat": "SMALL SAMPLE (n=82). The frame is right - reviews are non-degenerate here where the uniform-account frame gave p50=p90=0 - but the upper tail is not trustworthy at this n (commits p99=17535 from a handful of bot-like accounts). percentileOf clamps at p90 for that reason. Re-run `npm run sample` for a larger n before shipping publicly.",
+  "tailClampedAt": "p90",
   "metrics": {
     "commits": {
-      "p10": 0,
-      "p25": 18,
-      "p50": 32,
-      "p75": 72,
-      "p90": 160,
-      "p99": 656
+      "p10": 1,
+      "p25": 19,
+      "p50": 59,
+      "p75": 215,
+      "p90": 489,
+      "p99": 17535
     },
     "reviews": {
       "p10": 0,
       "p25": 0,
       "p50": 0,
-      "p75": 0,
-      "p90": 0,
-      "p99": 12
-    },
-    "streak": {
-      "p10": 2,
-      "p25": 2,
-      "p50": 4,
-      "p75": 6,
-      "p90": 11,
-      "p99": 31
-    },
-    "repos": {
-      "p10": 0,
-      "p25": 1,
-      "p50": 3,
-      "p75": 6,
-      "p90": 11,
-      "p99": 24
-    },
-    "issues": {
-      "p10": 0,
-      "p25": 0,
-      "p50": 0,
-      "p75": 0,
-      "p90": 2,
-      "p99": 18
+      "p75": 1,
+      "p90": 13,
+      "p99": 360
     },
     "prs": {
       "p10": 0,
       "p25": 0,
       "p50": 0,
-      "p75": 2,
-      "p90": 13,
-      "p99": 88
+      "p75": 18,
+      "p90": 48,
+      "p99": 6246
+    },
+    "issues": {
+      "p10": 0,
+      "p25": 0,
+      "p50": 0,
+      "p75": 3,
+      "p90": 9,
+      "p99": 321
+    },
+    "repos": {
+      "p10": 0,
+      "p25": 0,
+      "p50": 2,
+      "p75": 5,
+      "p90": 9,
+      "p99": 22
+    },
+    "streak": {
+      "p10": 2,
+      "p25": 4,
+      "p50": 6,
+      "p75": 13,
+      "p90": 27,
+      "p99": 175
     }
   }
 }

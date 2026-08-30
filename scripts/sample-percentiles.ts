@@ -1,4 +1,37 @@
 /**
+ * Back off correctly for the limit we actually hit.
+ *
+ * GitHub has TWO 403-shaped limits and they need opposite responses:
+ *
+ *   primary   — the hourly budget is spent (`remaining === 0`). Nothing works
+ *               until the window resets, so wait it out.
+ *   secondary — too many concurrent or too-rapid requests. The budget is still
+ *               full; it clears in about a minute.
+ *
+ * Treating a secondary limit as primary is a 60-minute stall for a 60-second
+ * problem — which is exactly what happened at concurrency 12: five workers each
+ * parked for 61 minutes while `core` sat at 5000/5000.
+ */
+async function backOff(): Promise<void> {
+  try {
+    const rl = (await rest('/rate_limit')) as {
+      resources: { core: { reset: number; remaining: number } };
+    };
+    const { reset, remaining } = rl.resources.core;
+    if (remaining > 0) {
+      process.stderr.write(`\n  secondary rate limit — pausing 60s (budget still ${remaining})\n`);
+      await sleep(60_000);
+      return;
+    }
+    const waitMs = Math.max(0, reset * 1000 - Date.now()) + 5000;
+    process.stderr.write(`\n  primary rate limit — waiting ${Math.ceil(waitMs / 60000)}m for reset\n`);
+    await sleep(waitMs);
+  } catch {
+    await sleep(60_000);
+  }
+}
+
+/**
  * Builds data/percentiles.json — the distribution every tier, rank and debuff
  * trigger reads from. Until this file is real, those are numbers we invented.
  *
@@ -19,15 +52,64 @@
  * production uses.
  */
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { execFile } from 'node:child_process';
-import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 import { promisify } from 'node:util';
 
 const run = promisify(execFile);
-const TMP = mkdtempSync(join(tmpdir(), 'questlog-'));
-process.on('exit', () => rmSync(TMP, { recursive: true, force: true }));
+
+/**
+ * Transport.
+ *
+ * This used to shell out to `gh api` for every call. Measured at ~504 ms per
+ * invocation — process spawn, TLS handshake, auth read — which under
+ * frame=repos (~3.4 repo calls per login) is over two hours spent waiting on
+ * process startup while the rate-limit budget sits almost untouched.
+ *
+ * Native fetch reuses the connection: ~40 ms. `gh` is still used exactly once,
+ * to borrow its token, so there is no separate credential to configure.
+ */
+const TOKEN = (await run('gh', ['auth', 'token'], { encoding: 'utf8' })).stdout.trim();
+if (!TOKEN) {
+  console.error('no GitHub token — run `gh auth login`');
+  process.exit(1);
+}
+
+const HEADERS: Record<string, string> = {
+  authorization: `Bearer ${TOKEN}`,
+  accept: 'application/vnd.github+json',
+  'user-agent': 'questlog-sampler',
+};
+
+class HttpError extends Error {
+  constructor(readonly status: number, readonly body: string) {
+    super(`HTTP ${status}: ${body.slice(0, 120)}`);
+  }
+}
+
+/** REST. Returns null for the "nothing here" statuses, which are normal here. */
+async function rest(path: string): Promise<unknown> {
+  const res = await fetch(`https://api.github.com${path}`, { headers: HEADERS });
+  // 204 empty repo, 202 stats still computing, 404 deleted.
+  if (res.status === 204 || res.status === 202 || res.status === 404) return null;
+  const text = await res.text();
+  if (!res.ok) throw new HttpError(res.status, text);
+  return JSON.parse(text) as unknown;
+}
+
+async function graphql(body: string): Promise<unknown> {
+  const res = await fetch('https://api.github.com/graphql', {
+    method: 'POST',
+    headers: { ...HEADERS, 'content-type': 'application/json' },
+    body,
+  });
+  const text = await res.text();
+  // GraphQL answers 200 with partial data and an `errors` array, so only a
+  // non-200 is a transport failure worth retrying.
+  if (!res.ok) throw new HttpError(res.status, text);
+  return JSON.parse(text) as unknown;
+}
 
 const arg = <T extends string | number>(k: string, d: T): T => {
   const hit = process.argv.find((a) => a.startsWith(`--${k}=`));
@@ -79,6 +161,24 @@ const MAX_REPO_ID = 1_000_000_000;
 const FRAME = arg('frame', 'repos');
 const MIN_CONTRIBUTORS = arg('min-contributors', 2);
 
+/**
+ * How many `gh` calls to keep in flight.
+ *
+ * The bottleneck under frame=repos is NOT the API — it is `gh` itself, measured
+ * at ~504 ms per invocation (process spawn + TLS + auth), issued strictly
+ * serially. At ~3.4 repo calls per login, 3,000 logins is over two hours of
+ * waiting on process startup while the rate-limit budget sits untouched.
+ *
+ * Kept modest: GitHub's secondary rate limiter watches concurrency, and
+ * withRetry already backs off if we trip it.
+ */
+// 12 tripped GitHub's secondary (concurrency) limiter within minutes. 6 keeps
+// the ~47x win over serial `gh` without provoking it.
+const CONCURRENCY = arg('concurrency', 6);
+
+/** Seed the login set from a previous checkpoint and keep collecting. */
+const SEED = process.argv.includes('--seed');
+
 const FROM = `${CAMPAIGN}-01-01T00:00:00Z`;
 const TO = `${CAMPAIGN}-12-31T23:59:59Z`;
 
@@ -93,32 +193,6 @@ interface Row extends Record<Metric, number> { login: string; total: number }
  * closes and the run hangs with no output. Write the body to a temp file
  * instead and hand gh a path.
  */
-const gh = async (args: string[], body?: string): Promise<unknown> => {
-  let argv = args;
-  let file: string | undefined;
-  if (body !== undefined) {
-    file = join(TMP, `q${Date.now()}${Math.random().toString(36).slice(2)}.json`);
-    writeFileSync(file, body);
-    argv = args.map((a) => (a === '-' ? file! : a));
-  }
-  try {
-    const { stdout } = await run('gh', argv, { maxBuffer: 64 * 1024 * 1024, encoding: 'utf8' });
-    return JSON.parse(String(stdout));
-  } catch (err) {
-    // A uniform id sample always contains accounts deleted or renamed between
-    // sampling and fetch. GraphQL answers those with `"uN": null` alongside
-    // every other user's real data and a 200 -- but `gh` still exits nonzero,
-    // and execFile throws away a perfectly good partial response. Recover it.
-    const out = (err as { stdout?: string }).stdout;
-    if (out) {
-      try { return JSON.parse(String(out)); } catch { /* not JSON: see below */ }
-    }
-    throw err;
-  } finally {
-    if (file) rmSync(file, { force: true });
-  }
-};
-
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 /**
@@ -127,33 +201,17 @@ const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms
  * thousand contributors crosses it several times and a run that treats it as a
  * transient error just burns its retries and drops the batch.
  */
-const isRateLimited = (err: unknown): boolean => {
-  const e = err as { stderr?: string; stdout?: string };
-  return /API rate limit exceeded|rate limit exceeded for/i.test(`${e.stderr ?? ''}${e.stdout ?? ''}`);
-};
+const isRateLimited = (err: unknown): boolean =>
+  err instanceof HttpError &&
+  (err.status === 429 ||
+    (err.status === 403 && /rate limit|abuse detection|secondary/i.test(err.body)));
 
 /** Sleep until the core budget resets, then carry on. */
-async function waitForReset(): Promise<void> {
-  try {
-    const rl = (await gh(['api', '/rate_limit'])) as {
-      resources: { core: { reset: number; remaining: number } };
-    };
-    const waitMs = Math.max(0, rl.resources.core.reset * 1000 - Date.now()) + 5000;
-    const mins = Math.ceil(waitMs / 60000);
-    process.stderr.write(`\n  rate limit reached — waiting ${mins}m for reset\n`);
-    await sleep(waitMs);
-  } catch {
-    await sleep(60_000);
-  }
-}
 
-/** 502/503/504 arrive as an nginx HTML page, not JSON. */
-const isTransient = (err: unknown): boolean => {
-  const e = err as { stderr?: string; stdout?: string };
-  const text = `${e.stderr ?? ''}${e.stdout ?? ''}`;
-  return /HTTP 50[234]|Bad Gateway|Service Unavailable|Gateway Time-?out|secondary rate limit|abuse detection/i
-    .test(text);
-};
+/** 5xx, and the socket-level failures a long run inevitably meets. */
+const isTransient = (err: unknown): boolean =>
+  (err instanceof HttpError && err.status >= 500) ||
+  /ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket hang up|fetch failed/i.test((err as Error).message ?? '');
 
 /**
  * A sampling run is minutes long and makes hundreds of calls, so it WILL meet a
@@ -162,12 +220,19 @@ const isTransient = (err: unknown): boolean => {
  * it. Retry the blips; give up loudly on anything else.
  */
 async function withRetry<T>(label: string, fn: () => Promise<T>, tries = 5): Promise<T | null> {
+  // Not decrementing `i` on a rate-limit wait would make waiting cost a retry;
+  // decrementing it WITHOUT a separate cap makes the loop unbounded. A run
+  // wedged for two hours on 43 secondary pauses with the budget untouched,
+  // because four workers kept re-triggering the limiter and nothing counted.
+  let rateWaits = 0;
+  const MAX_RATE_WAITS = 6;
   for (let i = 0; i < tries; i++) {
     try {
       return await fn();
     } catch (err) {
-      if (isRateLimited(err)) {
-        await waitForReset();
+      if (isRateLimited(err) && rateWaits < MAX_RATE_WAITS) {
+        rateWaits++;
+        await backOff();
         i--; // waiting is not a failed attempt
         continue;
       }
@@ -194,9 +259,7 @@ async function sampleLogins(n: number): Promise<string[]> {
     const since = Math.floor(Math.random() * MAX_USER_ID);
     calls++;
     try {
-      const page = (await gh([
-        'api', `/users?since=${since}&per_page=100`,
-      ])) as Array<{ login: string; type: string }>;
+      const page = (await rest(`/users?since=${since}&per_page=100`)) as Array<{ login: string; type: string }>;
       for (const u of page) if (u.type === 'User') out.add(u.login);
     } catch {
       // A dead id range or a transient 5xx costs one call, not the run.
@@ -214,42 +277,52 @@ async function sampleLogins(n: number): Promise<string[]> {
  */
 async function sampleViaRepos(n: number): Promise<string[]> {
   const out = new Set<string>();
-  let pages = 0, repos = 0, kept = 0, lastCheckpoint = 0;
+  if (SEED && existsSync(LOGINS)) {
+    for (const l of readFileSync(LOGINS, 'utf8').split('\n')) if (l) out.add(l);
+    process.stderr.write(`  seeded ${out.size} logins from ${LOGINS}\n`);
+  }
+  let pages = 0, repos = 0, kept = 0, lastCheckpoint = out.size;
+
+  const checkpoint = (): void => {
+    if (out.size - lastCheckpoint < 50) return;
+    lastCheckpoint = out.size;
+    mkdirSync(dirname(LOGINS), { recursive: true });
+    writeFileSync(LOGINS, [...out].join('\n') + '\n');
+  };
+
   while (out.size < n && pages < n) {
     pages++;
-    const page = await withRetry('repositories', () => gh([
-      'api', `/repositories?since=${Math.floor(Math.random() * MAX_REPO_ID)}&per_page=100`,
-    ]) as Promise<Array<{ full_name: string; fork: boolean }>>);
+    const page = await withRetry('repositories', () => rest(
+      `/repositories?since=${Math.floor(Math.random() * MAX_REPO_ID)}&per_page=100`,
+    ) as Promise<Array<{ full_name: string; fork: boolean }>>);
     if (!page) continue;
 
     // Forks carry their parent's contributor list and would double-count.
-    const candidates = page.filter((r) => !r.fork).slice(0, 12);
-    for (const r of candidates) {
-      if (out.size >= n) break;
-      repos++;
-      // Empty repos answer 204, disabled ones 403, and stats that are still
-      // being computed answer 202 with no body. All are skips, not failures.
-      const cs = await withRetry(r.full_name, () => gh([
-        'api', `/repos/${r.full_name}/contributors?per_page=30`,
-      ]) as Promise<Array<{ login: string; type: string }> | null>, 2);
-      if (cs && cs.length >= MIN_CONTRIBUTORS) {
-        kept++;
-        for (const c of cs) if (c.type === 'User') out.add(c.login);
+    const candidates = page.filter((r) => !r.fork).slice(0, 24);
+
+    // Fixed-size pool rather than one-at-a-time: the wait is process spawn,
+    // not rate limit, so overlapping calls is nearly free.
+    let cursor = 0;
+    const worker = async (): Promise<void> => {
+      while (cursor < candidates.length && out.size < n) {
+        const r = candidates[cursor++]!;
+        repos++;
+        // Empty repos answer 204, disabled ones 403, and stats still being
+        // computed answer 202 with no body. All are skips, not failures.
+        const cs = await withRetry(r.full_name, () => rest(
+          `/repos/${r.full_name}/contributors?per_page=30`,
+        ) as Promise<Array<{ login: string; type: string }> | null>, 2);
+        if (cs && cs.length >= MIN_CONTRIBUTORS) {
+          kept++;
+          for (const c of cs) if (c.type === 'User') out.add(c.login);
+        }
+        process.stderr.write(`\r  repos ${repos} (kept ${kept}) -> logins ${out.size}/${n}`);
+        checkpoint();
       }
-      process.stderr.write(`\r  repos ${repos} (kept ${kept}) -> logins ${out.size}/${n}`);
-      // Checkpoint continuously: this phase runs for hours across rate-limit
-      // waits, and losing it to a crash means starting over.
-      //
-      // NOT `out.size % 50 === 0` -- the set grows by a whole repo's
-      // contributor list at a time (3-30 at once), so exact multiples are
-      // mostly skipped and the checkpoint silently falls hundreds behind.
-      if (out.size - lastCheckpoint >= 50) {
-        lastCheckpoint = out.size;
-        mkdirSync(dirname(LOGINS), { recursive: true });
-        writeFileSync(LOGINS, [...out].join('\n') + '\n');
-      }
-    }
+    };
+    await Promise.all(Array.from({ length: CONCURRENCY }, worker));
   }
+  writeFileSync(LOGINS, [...out].join('\n') + '\n');
   process.stderr.write('\n');
   return [...out].slice(0, n);
 }
@@ -287,7 +360,7 @@ async function fetchBatch(logins: string[]): Promise<BatchResult> {
   const query = `query($f:DateTime!,$t:DateTime!){ rateLimit{cost remaining} ${aliases} }\n${FRAGMENT}`;
   const body = JSON.stringify({ query, variables: { f: FROM, t: TO } });
 
-  const res = (await gh(['api', 'graphql', '--input', '-'], body)) as {
+  const res = (await graphql(body)) as {
     data?: Record<string, unknown>;
     errors?: Array<{ type?: string; message?: string }>;
   };
@@ -396,13 +469,26 @@ async function main(): Promise<void> {
   console.error(`fetching contributions for campaign ${CAMPAIGN}…`);
   const rows: Row[] = [];
   let skipped = 0;
-  for (let i = 0; i < logins.length; i += BATCH) {
-    const batch = logins.slice(i, i + BATCH);
-    const got = await fetchAdaptive(batch);
-    rows.push(...got);
-    skipped += batch.length - got.length;
-    process.stderr.write(`\r  fetched ${rows.length}/${logins.length}${skipped ? ` (dropped ${skipped})` : ''}`);
-  }
+
+  // Batches in flight, not one at a time. The GraphQL budget is barely touched
+  // (a 50-user batch costs 1 point of 5,000), so the limit here is round-trip
+  // latency — serial batches spend 15 minutes waiting on the network. Kept at
+  // 4 because adaptive splitting can turn one batch into several requests, and
+  // the secondary limiter counts those too.
+  const batches: string[][] = [];
+  for (let i = 0; i < logins.length; i += BATCH) batches.push(logins.slice(i, i + BATCH));
+
+  let next = 0;
+  const worker = async (): Promise<void> => {
+    while (next < batches.length) {
+      const batch = batches[next++]!;
+      const got = await fetchAdaptive(batch);
+      rows.push(...got);
+      skipped += batch.length - got.length;
+      process.stderr.write(`\r  fetched ${rows.length}/${logins.length}${skipped ? ` (dropped ${skipped})` : ''}`);
+    }
+  };
+  await Promise.all(Array.from({ length: 4 }, worker));
 
   if (rows.length === 0) {
     console.error('\nno rows fetched — refusing to write a distribution from nothing');

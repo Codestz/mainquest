@@ -23,16 +23,19 @@ describe('the distribution table', () => {
 
   it('records how it was conditioned', () => {
     expect(IS_PLACEHOLDER).toBe(false);
-    expect(DISTRIBUTION.sampleSize).toBeGreaterThan(100);
+    // Deliberately low: the shipped table is the repo-contributor PILOT
+    // (n=82). Frame correctness beat sample size — see the file's `caveat`.
+    expect(DISTRIBUTION.sampleSize).toBeGreaterThan(50);
     expect(DISTRIBUTION.frame).toBeTruthy();
     expect(DISTRIBUTION.minActivity).toBeGreaterThan(0);
   });
 
-  it('flags reviews as degenerate rather than pretending it has tiers', () => {
-    // p50 === p90 === 0 in the current sample: 95% of retained accounts gave
-    // zero reviews. A percentile over that is a boolean in disguise, and the
-    // card must not claim a tier it has not earned.
-    expect(isDegenerate('reviews')).toBe(true);
+  it('has a non-degenerate reviews distribution', () => {
+    // This is why the sampling frame was changed. Under the uniform-account
+    // frame, reviews had p50 = p90 = 0 — a boolean wearing a percentile's
+    // clothes, with second_opinion, healer and the seniority rank all built on
+    // it. Sampling repo contributors instead makes it a real scale.
+    expect(isDegenerate('reviews')).toBe(false);
   });
 });
 
@@ -41,7 +44,15 @@ describe('percentileOf', () => {
 
   it('lands on the published stops', () => {
     expect(percentileOf(50, stops)).toBeCloseTo(0.5, 2);
-    expect(percentileOf(200, stops)).toBeCloseTo(0.9, 2);
+    expect(percentileOf(100, stops)).toBeCloseTo(0.75, 2);
+  });
+
+  it('saturates at the clamp the table declares', () => {
+    // The table declares tailClampedAt: p90 because at n=82 the top stop is a
+    // handful of bot-like accounts (commits p99 = 17,535 vs p90 = 489).
+    // Clamping there keeps the scale spread across real users.
+    expect(percentileOf(200, stops)).toBe(1);
+    expect(percentileOf(900, stops)).toBe(1);
   });
 
   it('interpolates between them', () => {
