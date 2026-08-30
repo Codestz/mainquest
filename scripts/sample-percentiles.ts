@@ -56,6 +56,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { dirname } from 'node:path';
 import { promisify } from 'node:util';
+// Shared with the Action: a card whose burst is computed differently from the
+// distribution it is scored against would be silently wrong.
+import { longestStreak, shapeMetrics } from '../src/metrics/calendar.js';
+
+interface BatchResult { rows: Row[]; overLimit: boolean }
 
 const run = promisify(execFile);
 
@@ -353,62 +358,6 @@ const FRAGMENT = `fragment M on User {
     contributionCalendar{ totalContributions weeks{ contributionDays{ contributionCount date } } }
   }
 }`;
-
-/** Longest run of consecutive active days — the `endurance` ability's input. */
-function longestStreak(weeks: Array<{ contributionDays: Array<{ contributionCount: number }> }>): number {
-  let best = 0, cur = 0;
-  for (const w of weeks) {
-    for (const d of w.contributionDays) {
-      cur = d.contributionCount > 0 ? cur + 1 : 0;
-      if (cur > best) best = cur;
-    }
-  }
-  return best;
-}
-
-/**
- * Two SHAPE metrics, computed from the daily calendar we already fetch and
- * previously threw away after taking the streak.
- *
- * They cost nothing — same query, same point — and they are orthogonal to
- * every existing dimension, which is what 12 classes needs. Six volume-ish
- * metrics could not separate 12 archetypes: the closest pair sat at 0.980
- * cosine and the bottom decile of users won their class by 0.006, which is
- * noise a single commit would flip.
- *
- * They are also unfarmable in the way that matters. You cannot become bursty
- * or a weekend contributor by committing MORE — only by committing
- * differently. That is the project's thesis in a metric.
- */
-function shapeMetrics(
-  weeks: Array<{ contributionDays: Array<{ contributionCount: number; date?: string }> }>,
-): { burst: number; weekend: number } {
-  const days: Array<{ n: number; dow: number }> = [];
-  for (const w of weeks) {
-    w.contributionDays.forEach((d, i) => {
-      // The calendar always runs Sunday-first, so the index IS the weekday
-      // when `date` is absent.
-      days.push({ n: d.contributionCount, dow: d.date ? new Date(d.date).getUTCDay() : i });
-    });
-  }
-  const active = days.filter((d) => d.n > 0);
-  if (active.length === 0) return { burst: 0, weekend: 0 };
-
-  // Burstiness: coefficient of variation over ACTIVE days only. Counting
-  // empty days would just re-measure volume, which we already have.
-  const mean = active.reduce((s, d) => s + d.n, 0) / active.length;
-  const variance = active.reduce((s, d) => s + (d.n - mean) ** 2, 0) / active.length;
-  const burst = mean > 0 ? Math.round((Math.sqrt(variance) / mean) * 1000) : 0;
-
-  const wkndTotal = active.filter((d) => d.dow === 0 || d.dow === 6)
-    .reduce((s, d) => s + d.n, 0);
-  const allTotal = active.reduce((s, d) => s + d.n, 0);
-  const weekend = allTotal > 0 ? Math.round((wkndTotal / allTotal) * 1000) : 0;
-
-  return { burst, weekend };
-}
-
-interface BatchResult { rows: Row[]; overLimit: boolean }
 
 async function fetchBatch(logins: string[]): Promise<BatchResult> {
   const aliases = logins

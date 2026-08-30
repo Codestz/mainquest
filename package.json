@@ -18,7 +18,8 @@
     "sheet": "tsx scripts/contact-sheet.ts",
     "icons": "git clone --depth 1 https://github.com/game-icons/icons.git vendor/game-icons",
     "preview": "tsx scripts/preview.ts",
-    "sample:merges": "tsx scripts/sample-merges.ts"
+    "sample:merges": "tsx scripts/sample-merges.ts",
+    "card": "tsx scripts/card.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
