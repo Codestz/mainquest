@@ -101,13 +101,15 @@ export function renderCard(i: CardInput): Card {
   s += `<rect y="190" width="${W}" height="70" fill="${bands[2]}"/>`;
   for (let n = 0; n < 14; n++) {
     const x = (n * 137) % W, y = 20 + ((n * 53) % 110);
-    s += `<rect x="${x}" y="${y}" width="3" height="3" fill="${th.star}" opacity=".6">` +
-      `<animate attributeName="opacity" values=".2;1;.2" dur="${3 + (n % 4)}s" begin="${(n * 0.4).toFixed(1)}s" repeatCount="indefinite"/></rect>`;
+    s += motion.animate
+      ? `<rect x="${x}" y="${y}" width="3" height="3" fill="${th.star}" opacity=".6">` +
+        `<animate attributeName="opacity" values=".2;1;.2" dur="${3 + (n % 4)}s" begin="${(n * 0.4).toFixed(1)}s" repeatCount="indefinite"/></rect>`
+      : `<rect x="${x}" y="${y}" width="3" height="3" fill="${th.star}" opacity=".6"/>`;
   }
   // --- ground: drifted (seeded, per campaign) -------------------------------
   s += `<g filter="url(#drift)">`;
   s += horizon(i.weeks, 252, th.mountain);
-  s += terrain(i.weeks, 24, 258, th);
+  s += terrain(i.weeks, 24, 258, th, motion);
   s += `</g>`;
     // The gap between the status window (ends x=316) and the ability window
   // (starts x=560) was dead space. The character belongs there.
@@ -149,10 +151,15 @@ export function renderCard(i: CardInput): Card {
   top4.forEach((m, n) => {
     const key = ABILITY_OF[m]!;
     const y = 60 + n * 26;
-    s += `<rect x="566" y="${y - 13}" width="292" height="22" fill="${th.row}" opacity="0">` +
-      `<animate attributeName="opacity" values="1;0;0;0" dur="12s" begin="${n * 3}s" repeatCount="indefinite" calcMode="discrete"/></rect>`;
-    s += `<text x="576" y="${y + 2}" font-family="ui-monospace,monospace" font-size="12" fill="${th.accent}" opacity="0">&gt;` +
-      `<animate attributeName="opacity" values="1;0;0;0" dur="12s" begin="${n * 3}s" repeatCount="indefinite" calcMode="discrete"/></text>`;
+    // The cursor exists to point at ONE ability while the description window
+    // shows its text. With no motion there is no cursor and no highlight —
+    // every ability is simply listed (docs/04).
+    if (motion.animate) {
+      s += `<rect x="566" y="${y - 13}" width="292" height="22" fill="${th.row}" opacity="0">` +
+        `<animate attributeName="opacity" values="1;0;0;0" dur="12s" begin="${n * 3}s" repeatCount="indefinite" calcMode="discrete"/></rect>`;
+      s += `<text x="576" y="${y + 2}" font-family="ui-monospace,monospace" font-size="12" fill="${th.accent}" opacity="0">&gt;` +
+        `<animate attributeName="opacity" values="1;0;0;0" dur="12s" begin="${n * 3}s" repeatCount="indefinite" calcMode="discrete"/></text>`;
+    }
     s += t(590, y + 2, L.abilities[key].name, 12);
     const tr = tier(i.p[m]);
     for (let k = 0; k < 3; k++) {
@@ -165,27 +172,58 @@ export function renderCard(i: CardInput): Card {
   }
 
   // --- description window ---
-  s += win(16, 336, 848, 68);
-  top4.forEach((m, n) => {
-    const key = ABILITY_OF[m]!;
-    const g = `<g opacity="0"><animate attributeName="opacity" values="1;0;0;0" dur="12s" begin="${n * 3}s" repeatCount="indefinite" calcMode="discrete"/>` +
-      t(30, 360, L.abilities[key].effect, 12) +
-      t(30, 378, `${L.ui.measures_prefix} ${L.abilities[key].measures}`, 11, th.edge) +
-      t(30, 394, `${L.ui.casts_this_campaign.replace('{n}', String(i.raw[m] ?? 0))} · ${L.ui.tier.replace('{n}', String(tier(i.p[m])))}`, 11, th.dim) +
-      `</g>`;
-    s += g;
-  });
-  if (i.restricted > 0) {
-    s += t(660, 360, `${L.ui.sealed_activity}: ${i.restricted}`, 11, th.accent);
+  // The still card has no cursor cycling, so its description window can be
+  // taller and carry every ability at once (docs/04).
+  s += motion.animate ? win(16, 336, 848, 68) : win(16, 316, 848, 88);
+  if (motion.animate) {
+    top4.forEach((m, n) => {
+      const key = ABILITY_OF[m]!;
+      s += `<g opacity="0"><animate attributeName="opacity" values="1;0;0;0" dur="12s" begin="${n * 3}s" repeatCount="indefinite" calcMode="discrete"/>` +
+        t(30, 360, L.abilities[key].effect, 12) +
+        t(30, 378, `${L.ui.measures_prefix} ${L.abilities[key].measures}`, 11, th.edge) +
+        t(30, 394, `${L.ui.casts_this_campaign.replace('{n}', String(i.raw[m] ?? 0))} · ${L.ui.tier.replace('{n}', String(tier(i.p[m])))}`, 11, th.dim) +
+        `</g>`;
+    });
+  } else {
+    // Nothing cycles, so the description window cannot show one ability's
+    // prose. It shows the `mide:` line for ALL of them instead — the line
+    // docs/03 calls load-bearing, because someone who ignores the RPG framing
+    // reads only those and still gets a stats card.
+    // Two columns, two rows. Four columns cannot hold the `measures:` line in
+    // ANY locale: the longest is 46 chars in Spanish (`sabbath`), which needs
+    // 248px at 9px monospace against the 184px a quarter-width column allows.
+    // src/i18n/fit.ts exists to make that a build error rather than a card
+    // that silently runs its text into the next column, and test/fit.test.ts
+    // now enforces it across all three locales.
+    const COL_W = 410;
+    top4.forEach((m, n) => {
+      const key = ABILITY_OF[m]!;
+      const col = 30 + (n % 2) * COL_W;
+      const row = 340 + Math.floor(n / 2) * 28;
+      s += t(col, row, L.abilities[key].name, 11, th.ink);
+      s += t(col, row + 12, `${L.ui.measures_prefix} ${L.abilities[key].measures}`, 9, th.edge);
+      s += t(col + 300, row, `${i.raw[m] ?? 0} · ${L.ui.tier.replace('{n}', String(tier(i.p[m])))}`, 9, th.dim);
+    });
   }
-  s += t(790, 394, mark, 10, th.edge);
+  if (i.restricted > 0) {
+    s += motion.animate
+      ? t(672, 358, `${L.ui.sealed_activity}: ${i.restricted}`, 11, th.accent)
+      : t(30, 398, `${L.ui.sealed_activity}: ${i.restricted}`, 9, th.accent);
+  }
+  s += t(790, 396, mark, 10, th.edge);
   // Say what the tiers rest on. A distribution note in small type is cheap;
   // a card that silently implies rigour it does not have is not.
   const caveats: string[] = [];
   if (isDegenerate('reviews')) caveats.push('reviews: sparse in sample');
   if (MERGES_IS_PROXY) caveats.push('merges: proxied by PRs opened');
-  if (caveats.length) s += t(600, 378, caveats.join(' · '), 9, th.warn);
-  s += t(600, 394, `n=${DISTRIBUTION.sampleSize} · ${DISTRIBUTION.generated}`, 9, th.edge);
+  if (caveats.length) {
+    s += motion.animate
+      ? t(672, 372, caveats.join(' · '), 9, th.warn)
+      : t(200, 398, caveats.join(' · '), 9, th.warn);
+  }
+  s += motion.animate
+    ? t(672, 384, `n=${DISTRIBUTION.sampleSize} · ${DISTRIBUTION.generated}`, 9, th.edge)
+    : t(600, 398, `n=${DISTRIBUTION.sampleSize} · ${DISTRIBUTION.generated}`, 9, th.edge);
   s += `</svg>`;
 
   return { svg: s, credit: sig.credit, klass };

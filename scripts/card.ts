@@ -17,7 +17,7 @@ import { promisify } from 'node:util';
 import { GitHubClient } from '../src/github/client.js';
 import { fetchProfile, ProfileNotFound } from '../src/github/profile.js';
 import { normalise } from '../src/normalise.js';
-import { renderCard } from '../src/render/card.js';
+import { renderAll } from '../src/render/outputs.js';
 
 const run = promisify(execFile);
 
@@ -57,7 +57,7 @@ async function main(): Promise<void> {
     throw err;
   }
 
-  const card = renderCard({
+  const outputs = renderAll({
     login: profile.login,
     campaign: profile.campaign,
     p: normalise(profile.raw),
@@ -71,8 +71,8 @@ async function main(): Promise<void> {
   });
 
   mkdirSync(OUT, { recursive: true });
-  const path = `${OUT}/${profile.login}.svg`;
-  writeFileSync(path, card.svg);
+  for (const o of outputs) writeFileSync(`${OUT}/${o.file}`, o.card.svg);
+  const card = outputs[0]!.card;
 
   const r = profile.raw;
   console.log(`${profile.login} — ${card.klass}  (campaign ${profile.campaign}, day ${profile.campaignDay})`);
@@ -80,7 +80,10 @@ async function main(): Promise<void> {
   console.log(`  streak ${r.streak} · repos ${r.repos} · issues ${r.issues}`);
   const pubShare = profile.calendarTotal > 0 ? (profile.calendarTotal - profile.restricted) / profile.calendarTotal : 0;
   console.log(`  burst ${r.burst} · weekend ${r.weekend} · sealed ${profile.restricted} of ${profile.calendarTotal} (${(100 * pubShare).toFixed(1)}% public)`);
-  console.log(`  charge ${card.credit.id}  ->  ${path} (${(card.svg.length / 1024).toFixed(1)} KB)`);
+  console.log(`  charge ${card.credit.id}`);
+  for (const o of outputs) {
+    console.log(`  ${OUT}/${o.file.padEnd(21)} ${(o.card.svg.length / 1024).toFixed(1)} KB`);
+  }
 }
 
 void main();

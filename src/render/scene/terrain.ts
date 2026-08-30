@@ -4,6 +4,7 @@ import type { Theme } from '../theme.js';
 
 export function terrain(
   weeks: number[], x0: number, y0: number, th: Theme,
+  motion: { animate: boolean } = { animate: true },
 ): string {
   const max = Math.max(...weeks, 1);
   const shades = th.terrain;
@@ -16,7 +17,11 @@ export function terrain(
       out += `<rect x="${x}" y="${y0 + r * 10}" width="15" height="9" fill="${shades[Math.max(0, Math.min(3, lvl - (r > 1 ? 1 : 0) + (jitter === 0 ? 0 : 0)))]}" opacity="${1 - r * 0.14}"/>`;
     }
   });
-  return `<g>${out}<animate attributeName="opacity" from="0" to="1" dur="0.9s" fill="freeze"/></g>`;
+  // The ground builds under the character's feet on load, then freezes
+  // (docs/04). A still card has already finished doing that.
+  return motion.animate
+    ? `<g>${out}<animate attributeName="opacity" from="0" to="1" dur="0.9s" fill="freeze"/></g>`
+    : `<g>${out}</g>`;
 }
 
 /**
