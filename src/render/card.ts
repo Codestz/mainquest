@@ -11,9 +11,15 @@
 
 import en from '../../locales/en.json' with { type: 'json' };
 import { classify, rank, debuffs, type ClassName, type Percentiles } from '../derive.js';
-import { campaignSeed, seal, streamForAxis } from '../identity.js';
+import { campaignSeed, pick, seal, streamForAxis } from '../identity.js';
 import { DISTRIBUTION, MERGES_IS_PROXY, isDegenerate } from '../normalise.js';
 import { composeSigil } from './sigil.js';
+import SPRITES from '../../data/sprites.v1.json' with { type: 'json' };
+
+interface Sprite { w: number; h: number; bytes: number; dataUri: string }
+const FAMILIAR_TABLE = SPRITES.familiars as Record<string, Sprite>;
+const CLASS_TABLE = SPRITES.classes as Record<string, Sprite>;
+const FAMILIARS = Object.keys(FAMILIAR_TABLE) as [string, ...string[]];
 
 const W = 880, H = 420;
 
@@ -64,10 +70,19 @@ const tier = (v: number): number => (v >= 0.85 ? 3 : v >= 0.5 ? 2 : 1);
  * beat 365 muddy ones, and it keeps docs/04's "three flat bands, never a
  * gradient" rule honest.
  */
+/**
+ * Bands run top -> horizon. Each palette darkens upward, so the sky sits behind
+ * the windows rather than competing with them.
+ *
+ * Q3 was `#8C4A2E / #A85C52 / #5E4272` and read as flat brown: a mid-value
+ * orange at full saturation across the largest band on the card. Real dusk is
+ * dark overhead and warm only at the horizon, so the value range is what makes
+ * it read, not the hue. Same correction applied to Q1.
+ */
 const SEASONS: ReadonlyArray<readonly [string, string, string]> = [
-  ['#3E2A5C', '#7A4A72', '#C97A62'], // Q1  cold dawn
-  ['#2E5E8C', '#4C86B0', '#86BCD4'], // Q2  clear day
-  ['#8C4A2E', '#A85C52', '#5E4272'], // Q3  dusk
+  ['#2A2350', '#5A3E6F', '#B8705E'], // Q1  cold dawn
+  ['#1E4E7A', '#3F7FA8', '#7FB8CE'], // Q2  clear day
+  ['#2B2350', '#6B3A5C', '#C4703F'], // Q3  dusk
   ['#141B4D', '#1E2A6B', '#34367F'], // Q4  deep night (docs/04 reference)
 ];
 
@@ -115,21 +130,51 @@ function terrain(weeks: number[], x0: number, y0: number): string {
  *
  * `y` is the ground line: the figure stands ON it rather than floating above.
  */
-function sprite(x: number, groundY: number): string {
-  const body = '#C6D4FF', edge = '#141B4D', metal = '#FFD866';
-  const g = (dy: number) => groundY - dy;
-  return `<g transform="translate(${x} 0)">` +
-    `<animateTransform attributeName="transform" type="translate" additive="sum" ` +
-    `values="0 0; 0 -3; 0 0" dur="1.8s" repeatCount="indefinite"/>` +
-    `<ellipse cx="0" cy="${groundY + 2}" rx="18" ry="4" fill="#0B1A10" opacity=".45"/>` +
-    `<rect x="-11" y="${g(56)}" width="22" height="18" fill="${body}" stroke="${edge}" stroke-width="2"/>` +
-    `<rect x="-6" y="${g(50)}" width="12" height="4" fill="${edge}"/>` +
-    `<rect x="-14" y="${g(38)}" width="28" height="24" fill="${body}" stroke="${edge}" stroke-width="2"/>` +
-    `<rect x="-13" y="${g(14)}" width="10" height="14" fill="${body}" stroke="${edge}" stroke-width="2"/>` +
-    `<rect x="3" y="${g(14)}" width="10" height="14" fill="${body}" stroke="${edge}" stroke-width="2"/>` +
-    `<rect x="16" y="${g(52)}" width="4" height="42" fill="${metal}" stroke="${edge}" stroke-width="2"/>` +
-    `<rect x="12" y="${g(14)}" width="12" height="5" fill="${edge}"/>` +
-    `</g>`;
+/**
+ * The character, standing on the ground line.
+ *
+ * `spriteBase` is data (your class); the `familiar` beside it is seed, drawn
+ * from the PERMANENT identity lane — so your companion is yours for as long as
+ * the login exists, the same rule as the crest (docs/07#7).
+ *
+ * Both are base64 PNGs inlined as data URIs: an SVG in an <img> cannot load
+ * anything external (docs/04). `image-rendering: pixelated` is mandatory — a
+ * 40px sprite scaled up without it is blurred to mush.
+ */
+function sprite(
+  x: number,
+  groundY: number,
+  klass: ClassName,
+  familiarKey: string,
+  scale = 2,
+): string {
+  const c = CLASS_TABLE[klass]!;
+  const f = FAMILIAR_TABLE[familiarKey];
+  const w = c.w * scale, h = c.h * scale;
+
+  let out = `<g>`;
+  out += `<ellipse cx="${x}" cy="${groundY + 2}" rx="${Math.round(w * 0.42)}" ry="5" fill="#0B1A10" opacity=".45"/>`;
+
+  // Idle bob: small, slow, and the only motion on the character (docs/04's
+  // animation budget — everything that loops must be cheap).
+  out += `<g><animateTransform attributeName="transform" type="translate" ` +
+    `values="0 0; 0 -3; 0 0" dur="1.9s" repeatCount="indefinite" calcMode="spline" ` +
+    `keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" keyTimes="0;0.5;1"/>` +
+    `<image href="${c.dataUri}" x="${Math.round(x - w / 2)}" y="${groundY - h}" ` +
+    `width="${w}" height="${h}" image-rendering="pixelated"/></g>`;
+
+  if (f) {
+    const fw = f.w * (scale - 0.6), fh = f.h * (scale - 0.6);
+    // Offset phase so the pair never bobs in unison — two things moving on the
+    // same beat reads as one object.
+    out += `<g><animateTransform attributeName="transform" type="translate" ` +
+      `values="0 0; 0 -5; 0 0" dur="2.7s" begin="-0.9s" repeatCount="indefinite" ` +
+      `calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" keyTimes="0;0.5;1"/>` +
+      `<image href="${f.dataUri}" x="${Math.round(x + w / 2 + 6)}" ` +
+      `y="${Math.round(groundY - h * 0.85)}" width="${Math.round(fw)}" height="${Math.round(fh)}" ` +
+      `image-rendering="pixelated" opacity=".95"/></g>`;
+  }
+  return out + `</g>`;
 }
 
 export interface Card { svg: string; credit: { id: string; author: string }; klass: ClassName }
@@ -173,7 +218,10 @@ export function renderCard(i: CardInput): Card {
   s += horizon(i.weeks, 252, '#2B2258');
   s += terrain(i.weeks, 24, 258);
   s += `</g>`;
-  s += sprite(430, 258);
+    // The gap between the status window (ends x=316) and the ability window
+  // (starts x=560) was dead space. The character belongs there.
+  const familiar = pick(streamForAxis(i.login, i.campaign, 'spriteAccessory'), FAMILIARS);
+  s += sprite(416, 258, klass, familiar, 2);
 
   // --- status window ---
   s += win(16, 16, 300, 104);
