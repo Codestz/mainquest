@@ -1,9 +1,27 @@
 {
   "name": "mainquest",
-  "version": "0.0.0",
-  "private": true,
+  "version": "1.0.0",
+  "private": false,
   "description": "Turns a GitHub profile into a 16-bit JRPG status screen.",
+  "keywords": [
+    "github-action",
+    "profile-readme",
+    "svg",
+    "pixel-art",
+    "rpg",
+    "contribution-graph",
+    "github-profile"
+  ],
   "license": "MIT",
+  "author": "Codestz",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Codestz/mainquest.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Codestz/mainquest/issues"
+  },
+  "homepage": "https://github.com/Codestz/mainquest#readme",
   "type": "module",
   "engines": {
     "node": ">=20"

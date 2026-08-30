@@ -55,7 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: <owner>/mainquest@v1
+      - uses: Codestz/mainquest@v1
         with:
           github_token: ${{ secrets.MAINQUEST_PAT }}
           username: ${{ github.repository_owner }}
@@ -174,8 +174,7 @@ rhythm is real), shows the sealed count, and says *"rhythm known, role not"*.
 
 ## Status
 
-The renderer, classifier, identity layer and fetch layer work end to end. The
-Action itself is not published yet.
+**v1.0.0.** The Action works end to end: fetch, classify, render, commit.
 
 Two things are honest about their limits, on the card and here:
 
@@ -184,6 +183,11 @@ Two things are honest about their limits, on the card and here:
   own sample size.
 - `merges` is real for a rendered card, but the *scale* it is scored against
   still uses PRs-opened, because the bulk sampler skips the Tier 1 search.
+
+Also known: sprite proportions drift between classes, and cards are ~30 KB
+against the 25 KB target in `docs/04` (40 KB hard limit).
+
+See [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Licence
 
