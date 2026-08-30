@@ -1,0 +1,41 @@
+name: Bug report
+description: Something rendered wrong, crashed, or classified oddly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Rendering bugs are usually reproducible from `npm run card -- --user=<login>`
+        alone, so that command's output is the single most useful thing you can paste.
+  - type: input
+    id: login
+    attributes:
+      label: GitHub login
+      description: Only if the profile is public — leave blank otherwise and describe the shape of the data instead.
+    validations:
+      required: false
+  - type: input
+    id: campaign
+    attributes:
+      label: Campaign year
+      placeholder: "2026"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output of `npm run card`
+      description: The metric lines, not the SVG.
+      render: text
+  - type: dropdown
+    id: variant
+    attributes:
+      label: Which output
+      multiple: true
+      options: [card-dark, card-light, card-dark-still, card-light-still, all of them]

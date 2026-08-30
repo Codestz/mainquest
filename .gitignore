@@ -1,8 +1,37 @@
+# dependencies
 node_modules/
+
+# build output — every artefact here is reproducible
+build/
 dist/
+dist-action/
 coverage/
+
+# third-party source, cloned on demand by `npm run icons`
+vendor/
+
+# sampling working files.
+#
+# The row-level sample is 400 real accounts' contribution counts. Logins are
+# already stripped, and nothing in src/ reads it — the sampler writes it, and
+# `data/percentiles.json` is the published result. There is no reason to
+# publish other people's activity to get a distribution, so it stays local.
+data/sample.anon.jsonl
+build/sample.jsonl
+build/logins*.txt
+
+# local tooling state
+.serena/cache/
+.serena/project.local.yml
+.agentry/
+
+# logs and OS noise
 *.log
 .DS_Store
-.agentry/
-build/
-vendor/
+Thumbs.db
+
+# never commit these
+.env
+.env.*
+*.pem
+*.key

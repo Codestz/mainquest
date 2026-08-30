@@ -1,0 +1,31 @@
+name: Class or metric feedback
+description: The class, rank, ability or debuff seems wrong for how you actually work
+labels: [classification]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the most useful kind of issue. Classification is derived from
+        ratios between eight metrics, and the archetype vectors are hand-written
+        — so "this does not describe me" is real signal, not a complaint.
+
+        Please read `VISION.md` first. Some things are deliberate: the rank is
+        earned *in this campaign* and is not a claim about your seniority, and
+        debuffs are part of the design rather than an oversight.
+  - type: input
+    id: got
+    attributes:
+      label: Class you were given
+    validations:
+      required: true
+  - type: input
+    id: expected
+    attributes:
+      label: Class you would have expected, if any
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it feels wrong
+      description: What does your work actually look like that the card missed?
+    validations:
+      required: true

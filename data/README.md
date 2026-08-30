@@ -50,17 +50,21 @@ in public. So the published table is conditioned on an activity floor
 records `minActivity`, `retainedFraction` and `anyActivityFraction` so the
 conditioning is never invisible to whoever reads it.
 
-**The rows are kept**, in two copies on purpose:
+**The rows are kept locally, and only locally**, in two copies:
 
 | | |
 |---|---|
-| `build/sample.jsonl` | Identified. Local only, gitignored. |
-| `data/sample.anon.jsonl` | Same rows minus `login`. Committed. |
+| `build/sample.jsonl` | Identified. Gitignored. |
+| `data/sample.anon.jsonl` | Same rows minus `login`. Gitignored. |
 
-Percentiles need the numbers, not the people, so the published table stays
-auditable and re-tunable without shipping a named dataset of 5,000 strangers'
-activity to a public repo. Re-tuning the floor is a local recompute over the
-committed file, not another run against someone else's API.
+Both stay out of the repository. Percentiles need the numbers, not the people,
+and `data/percentiles.json` — the aggregate — is the only thing that has to be
+published. There is no reason to ship a few hundred strangers' activity to a
+public repo in order to distribute a distribution, even with logins stripped.
+
+The cost is that re-tuning the activity floor requires whoever does it to hold
+their own sample. That is the right trade: the person re-tuning is running the
+sampler anyway.
 
 ### What is shipped now
 
