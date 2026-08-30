@@ -1,0 +1,29 @@
+{
+  "name": "questlog",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Turns a GitHub profile into a 16-bit JRPG status screen.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "ncc build src/main.ts -o dist-action --minify",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "sample": "tsx scripts/sample-percentiles.ts",
+    "check": "npm run typecheck && npm run test",
+    "sheet": "tsx scripts/contact-sheet.ts",
+    "icons": "git clone --depth 1 https://github.com/game-icons/icons.git vendor/game-icons",
+    "preview": "tsx scripts/preview.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@vercel/ncc": "^0.38.3",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.11"
+  }
+}
