@@ -87,7 +87,7 @@ export function renderCard(i: CardInput): Card {
   for (let n = 0; n < 14; n++) {
     const x = (n * 137) % W, y = 20 + ((n * 53) % 110);
     s += `<rect x="${x}" y="${y}" width="3" height="3" fill="#F2F0D8" opacity=".6">` +
-      `<animate attributeName="opacity" values=".2;1;.2" dur="${3 + (n % 4)}s" begin="${n * 0.4}s" repeatCount="indefinite"/></rect>`;
+      `<animate attributeName="opacity" values=".2;1;.2" dur="${3 + (n % 4)}s" begin="${(n * 0.4).toFixed(1)}s" repeatCount="indefinite"/></rect>`;
   }
   // --- ground: drifted (seeded, per campaign) -------------------------------
   s += `<g filter="url(#drift)">`;
