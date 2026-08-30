@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { normalise, percentileOf, DISTRIBUTION, IS_PLACEHOLDER, isDegenerate } from '../src/normalise.js';
-import type { Metric } from '../src/derive.js';
+import { hasSignal, classMargin, type Metric } from '../src/derive.js';
 
-const METRICS: Metric[] = ['commits', 'reviews', 'merges', 'streak', 'repos', 'issues'];
+const METRICS: Metric[] = [
+  'commits', 'reviews', 'merges', 'streak', 'repos', 'issues', 'burst', 'weekend',
+];
 
 describe('the distribution table', () => {
   it('covers every metric derive() consumes', () => {
@@ -69,10 +71,33 @@ describe('percentileOf', () => {
   });
 
   it('never leaves 0..1', () => {
-    const p = normalise({ commits: 9e9, reviews: 0, merges: 0, streak: 0, repos: 0, issues: 0 });
+    const p = normalise({ commits: 9e9, reviews: 0, merges: 0, streak: 0, repos: 0, issues: 0, burst: 0, weekend: 0 });
     for (const m of METRICS) {
       expect(p[m], m).toBeGreaterThanOrEqual(0);
       expect(p[m], m).toBeLessThanOrEqual(1);
     }
+  });
+});
+
+describe('the empty state', () => {
+  const flat = normalise({
+    commits: 0, reviews: 0, merges: 0, streak: 0, repos: 0, issues: 0, burst: 0, weekend: 0,
+  });
+
+  it('carries no signal, so it is not classified', () => {
+    // Centred cosine measures SHAPE, so a flat vector scores 0/0 against every
+    // archetype and the sort returns whichever is first in the list. That
+    // labelled the empty-account fixture `berserker` — the extreme
+    // high-volume class. The card must decline instead.
+    expect(hasSignal(flat)).toBe(false);
+  });
+
+  it('still classifies a vector with real shape', () => {
+    const shaped = normalise({
+      commits: 2400, reviews: 18, merges: 90, streak: 140, repos: 6, issues: 20,
+      burst: 1400, weekend: 120,
+    });
+    expect(hasSignal(shaped)).toBe(true);
+    expect(classMargin(shaped)).toBeGreaterThan(0);
   });
 });

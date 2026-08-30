@@ -14,7 +14,7 @@
  */
 
 import en from '../../locales/en.json' with { type: 'json' };
-import { classify, rank, debuffs, type Percentiles } from '../derive.js';
+import { classify, classMargin, hasSignal, rank, debuffs, type Percentiles } from '../derive.js';
 import { campaignSeed, pick, seal, streamForAxis } from '../identity/index.js';
 import { DISTRIBUTION, MERGES_IS_PROXY, isDegenerate } from '../normalise.js';
 import { composeSigil } from './sigil/index.js';
@@ -52,6 +52,9 @@ export interface Card { svg: string; credit: { id: string; author: string }; kla
 export function renderCard(i: CardInput): Card {
   const L = en;
   const [klass, sub] = classify(i.p);
+  // A flat vector has no shape to classify. Say so rather than inventing one.
+  const classified = hasSignal(i.p);
+  const margin = classMargin(i.p);
   const rk = rank(i.raw['reviews'] ?? 0, i.prsOpened, i.accountAgeYears);
   const debs = debuffs(i.p);
   const sig = composeSigil(i.login, i.campaign, 40);
@@ -97,9 +100,20 @@ export function renderCard(i: CardInput): Card {
   s += win(16, 16, 300, 104);
   s += `<g transform="translate(24 22)">${sig.svg}</g>`;
   s += t(76, 42, i.login, 14);
-  s += t(76, 60, `${L.classes[klass].name} · ${L.ranks[rk as keyof typeof L.ranks]}`, 11, ACCENT);
-  s += t(76, 76, `${L.classes[klass].epithet}`, 11, EDGE);
-  s += t(76, 92, `path of the ${L.classes[sub].name}`, 11, EDGE);
+  if (classified) {
+    s += t(76, 60, `${L.classes[klass].name} · ${L.ranks[rk as keyof typeof L.ranks]}`, 11, ACCENT);
+    s += t(76, 76, `${L.classes[klass].epithet}`, 11, EDGE);
+    // Margin is shape, not merit: a textbook example of an archetype and a
+    // hybrid who fits none cleanly are both interesting, neither is better.
+    s += t(76, 92, margin > 0.12
+      ? `true ${L.classes[klass].name}`
+      : margin < 0.03
+        ? `hybrid · also ${L.classes[sub].name}`
+        : `path of the ${L.classes[sub].name}`, 11, EDGE);
+  } else {
+    s += t(76, 60, 'unclassed', 11, ACCENT);
+    s += t(76, 76, 'the campaign has not begun', 11, EDGE);
+  }
   s += t(24, 112, `${L.ui.campaign.replace('{year}', String(i.campaign))} · day ${i.campaignDay}`, 10, DIM);
 
   // --- ability window ---

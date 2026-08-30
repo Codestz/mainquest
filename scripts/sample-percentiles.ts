@@ -176,14 +176,29 @@ const MIN_CONTRIBUTORS = arg('min-contributors', 2);
 // the ~47x win over serial `gh` without provoking it.
 const CONCURRENCY = arg('concurrency', 6);
 
+/**
+ * Concurrency for the GraphQL fetch phase, kept SEPARATE from the REST one.
+ *
+ * REST tolerates 6 in flight. GraphQL does not: at 4 workers the secondary
+ * limiter fired repeatedly and every trip cost a 60-second pause, while the
+ * point budget sat at 5000/5000. Serial never tripped it. 1 is the honest
+ * default; raise it only with evidence.
+ */
+const FETCH_CONCURRENCY = arg('fetch-concurrency', 1);
+
 /** Seed the login set from a previous checkpoint and keep collecting. */
 const SEED = process.argv.includes('--seed');
 
 const FROM = `${CAMPAIGN}-01-01T00:00:00Z`;
 const TO = `${CAMPAIGN}-12-31T23:59:59Z`;
 
-type Metric = 'commits' | 'reviews' | 'streak' | 'repos' | 'issues' | 'prs';
-const METRICS: Metric[] = ['commits', 'reviews', 'streak', 'repos', 'issues', 'prs'];
+type Metric =
+  | 'commits' | 'reviews' | 'streak' | 'repos' | 'issues' | 'prs'
+  // Shape, not volume. Free from the calendar we already fetch (see shapeMetrics).
+  | 'burst' | 'weekend';
+const METRICS: Metric[] = [
+  'commits', 'reviews', 'streak', 'repos', 'issues', 'prs', 'burst', 'weekend',
+];
 
 interface Row extends Record<Metric, number> { login: string; total: number }
 
@@ -335,7 +350,7 @@ const FRAGMENT = `fragment M on User {
     totalPullRequestContributions
     totalIssueContributions
     totalRepositoryContributions
-    contributionCalendar{ totalContributions weeks{ contributionDays{ contributionCount } } }
+    contributionCalendar{ totalContributions weeks{ contributionDays{ contributionCount date } } }
   }
 }`;
 
@@ -349,6 +364,48 @@ function longestStreak(weeks: Array<{ contributionDays: Array<{ contributionCoun
     }
   }
   return best;
+}
+
+/**
+ * Two SHAPE metrics, computed from the daily calendar we already fetch and
+ * previously threw away after taking the streak.
+ *
+ * They cost nothing — same query, same point — and they are orthogonal to
+ * every existing dimension, which is what 12 classes needs. Six volume-ish
+ * metrics could not separate 12 archetypes: the closest pair sat at 0.980
+ * cosine and the bottom decile of users won their class by 0.006, which is
+ * noise a single commit would flip.
+ *
+ * They are also unfarmable in the way that matters. You cannot become bursty
+ * or a weekend contributor by committing MORE — only by committing
+ * differently. That is the project's thesis in a metric.
+ */
+function shapeMetrics(
+  weeks: Array<{ contributionDays: Array<{ contributionCount: number; date?: string }> }>,
+): { burst: number; weekend: number } {
+  const days: Array<{ n: number; dow: number }> = [];
+  for (const w of weeks) {
+    w.contributionDays.forEach((d, i) => {
+      // The calendar always runs Sunday-first, so the index IS the weekday
+      // when `date` is absent.
+      days.push({ n: d.contributionCount, dow: d.date ? new Date(d.date).getUTCDay() : i });
+    });
+  }
+  const active = days.filter((d) => d.n > 0);
+  if (active.length === 0) return { burst: 0, weekend: 0 };
+
+  // Burstiness: coefficient of variation over ACTIVE days only. Counting
+  // empty days would just re-measure volume, which we already have.
+  const mean = active.reduce((s, d) => s + d.n, 0) / active.length;
+  const variance = active.reduce((s, d) => s + (d.n - mean) ** 2, 0) / active.length;
+  const burst = mean > 0 ? Math.round((Math.sqrt(variance) / mean) * 1000) : 0;
+
+  const wkndTotal = active.filter((d) => d.dow === 0 || d.dow === 6)
+    .reduce((s, d) => s + d.n, 0);
+  const allTotal = active.reduce((s, d) => s + d.n, 0);
+  const weekend = allTotal > 0 ? Math.round((wkndTotal / allTotal) * 1000) : 0;
+
+  return { burst, weekend };
 }
 
 interface BatchResult { rows: Row[]; overLimit: boolean }
@@ -394,7 +451,10 @@ async function fetchBatch(logins: string[]): Promise<BatchResult> {
         totalPullRequestContributions: number;
         totalIssueContributions: number;
         totalRepositoryContributions: number;
-        contributionCalendar: { totalContributions: number; weeks: never[] };
+        contributionCalendar: {
+          totalContributions: number;
+          weeks: Array<{ contributionDays: Array<{ contributionCount: number; date: string }> }>;
+        };
       };
     };
     const c = u.contributionsCollection;
@@ -406,6 +466,7 @@ async function fetchBatch(logins: string[]): Promise<BatchResult> {
       issues: c.totalIssueContributions,
       repos: c.totalRepositoryContributions,
       streak: longestStreak(c.contributionCalendar.weeks),
+      ...shapeMetrics(c.contributionCalendar.weeks),
       total: c.contributionCalendar.totalContributions,
     });
   }
@@ -470,11 +531,11 @@ async function main(): Promise<void> {
   const rows: Row[] = [];
   let skipped = 0;
 
-  // Batches in flight, not one at a time. The GraphQL budget is barely touched
-  // (a 50-user batch costs 1 point of 5,000), so the limit here is round-trip
-  // latency — serial batches spend 15 minutes waiting on the network. Kept at
-  // 4 because adaptive splitting can turn one batch into several requests, and
-  // the secondary limiter counts those too.
+  // Batches in flight. NOT more than a couple: GraphQL's secondary limiter
+  // watches concurrency, and each trip costs a 60-second pause. At 4 workers a
+  // 2,447-login run spent all its time parked — the serial version never
+  // tripped it once. The GraphQL point budget is irrelevant here (a 50-user
+  // batch costs 1 of 5,000); the only real limit is how many requests overlap.
   const batches: string[][] = [];
   for (let i = 0; i < logins.length; i += BATCH) batches.push(logins.slice(i, i + BATCH));
 
@@ -488,7 +549,7 @@ async function main(): Promise<void> {
       process.stderr.write(`\r  fetched ${rows.length}/${logins.length}${skipped ? ` (dropped ${skipped})` : ''}`);
     }
   };
-  await Promise.all(Array.from({ length: 4 }, worker));
+  await Promise.all(Array.from({ length: FETCH_CONCURRENCY }, worker));
 
   if (rows.length === 0) {
     console.error('\nno rows fetched — refusing to write a distribution from nothing');
@@ -539,6 +600,19 @@ async function main(): Promise<void> {
     frame: FRAME === 'repos'
       ? `uniform over GitHub repository ids via /repositories?since, forks dropped, repos with >=${MIN_CONTRIBUTORS} contributors kept, then those contributors; conditioned on >=${MIN_ACTIVITY} public contributions in the campaign`
       : `uniform over GitHub account ids via /users?since, conditioned on >=${MIN_ACTIVITY} public contributions in the campaign`,
+    /**
+     * Where the table stops being trustworthy.
+     *
+     * The top stop is driven by a handful of bot-like accounts — in this sample
+     * commits p99 = 5,879 against p90 = 510. Interpolating to p99 would
+     * compress every real user into a sliver of the scale, so the table
+     * declares its own clamp and `percentileOf` saturates there. It is data,
+     * not a constant, so a larger sample can move it without a code change.
+     *
+     * This was hand-added to an earlier table and NOT emitted here, so the next
+     * regeneration silently dropped it and the guard test caught the change.
+     */
+    tailClampedAt: 'p90',
     frameNote: FRAME === 'repos'
       ? 'Size-biased on purpose: contributing to more repos means more chances to be drawn. This over-represents active developers, which is the population that installs a character sheet — but it is a bias, and this is not "the average developer".'
       : 'The floor is deliberate. Unconditioned, a uniform account sample is ~90% dormant and would place every real user of this card at p99 on every metric.',

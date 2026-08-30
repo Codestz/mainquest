@@ -1,12 +1,57 @@
 {
-  "_meta": { "lang": "es", "complete": true },
+  "_meta": {
+    "lang": "es",
+    "complete": true
+  },
   "classes": {
-    "warrior":     { "name": "guerrero",    "epithet": "de la muralla nocturna" },
-    "mage":        { "name": "mago",        "epithet": "de las agujas flotantes" },
-    "healer":      { "name": "sanador",     "epithet": "del bosque callado" },
-    "rogue":       { "name": "pícaro",      "epithet": "de los tejados mojados" },
-    "guardian":    { "name": "guardián",    "epithet": "de la niebla larga" },
-    "necromancer": { "name": "nigromante",  "epithet": "del archivo frío" }
+    "berserker": {
+      "name": "berserker",
+      "epithet": "de la tormenta súbita"
+    },
+    "warrior": {
+      "name": "guerrero",
+      "epithet": "del muro nocturno"
+    },
+    "healer": {
+      "name": "sanador",
+      "epithet": "del bosque callado"
+    },
+    "druid": {
+      "name": "druida",
+      "epithet": "del séptimo día"
+    },
+    "finisher": {
+      "name": "rematador",
+      "epithet": "de la puerta cerrada"
+    },
+    "rogue": {
+      "name": "pícaro",
+      "epithet": "de los tejados mojados"
+    },
+    "sentinel": {
+      "name": "centinela",
+      "epithet": "de la larga guardia"
+    },
+    "hermit": {
+      "name": "ermitaño",
+      "epithet": "de la celda lejana"
+    },
+    "mage": {
+      "name": "mago",
+      "epithet": "de las agujas flotantes"
+    },
+    "wanderer": {
+      "name": "errante",
+      "epithet": "del camino abierto"
+    },
+    "tracker": {
+      "name": "rastreador",
+      "epithet": "del rastro frío"
+    },
+    "necromancer": {
+      "name": "nigromante",
+      "epithet": "del archivo frío"
+    }
   },
   "ranks": {
     "apprentice": "aprendiz",
@@ -46,12 +91,31 @@
       "name": "rastreo",
       "effect": "Revelas lo que está roto antes de que nadie lo note.",
       "measures": "issues abiertos"
+    },
+    "burstfire": {
+      "name": "fuego en ráfaga",
+      "effect": "Todo de golpe, y después nada. Devastador e insostenible.",
+      "measures": "varianza de actividad diaria"
+    },
+    "sabbath": {
+      "name": "sabbat",
+      "effect": "Poder que solo responde los días que nadie mira.",
+      "measures": "proporción de actividad en fin de semana"
     }
   },
   "debuffs": {
-    "lone_wolf":      { "name": "lobo solitario",  "effect": "No puedes recibir asistencia." },
-    "revolving_door": { "name": "puerta giratoria","effect": "Lo que abres rara vez se cierra." },
-    "ivory_tower":    { "name": "torre de marfil", "effect": "Solo peleas en tu propio terreno." }
+    "lone_wolf": {
+      "name": "lobo solitario",
+      "effect": "No puedes recibir asistencia."
+    },
+    "revolving_door": {
+      "name": "puerta giratoria",
+      "effect": "Lo que abres rara vez se cierra."
+    },
+    "ivory_tower": {
+      "name": "torre de marfil",
+      "effect": "Solo peleas en tu propio terreno."
+    }
   },
   "ui": {
     "abilities": "habilidades",

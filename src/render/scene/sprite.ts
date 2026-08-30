@@ -1,4 +1,4 @@
-import SPRITES from '../../../data/sprites.v1.json' with { type: 'json' };
+import SPRITES from '../../../data/sprites.v2.json' with { type: 'json' };
 import type { ClassName } from '../../derive.js';
 
 export interface Sprite { w: number; h: number; bytes: number; dataUri: string }

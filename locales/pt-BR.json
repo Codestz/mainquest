@@ -1,12 +1,58 @@
 {
-  "_meta": { "lang": "pt-BR", "complete": false, "note": "Flavour text must be transcreated by a native speaker, not translated." },
+  "_meta": {
+    "lang": "pt-BR",
+    "complete": false,
+    "note": "Flavour text must be transcreated by a native speaker, not translated."
+  },
   "classes": {
-    "warrior":     { "name": "guerreiro",   "epithet": "da muralha noturna" },
-    "mage":        { "name": "mago",        "epithet": "das torres flutuantes" },
-    "healer":      { "name": "curandeiro",  "epithet": "do bosque calado" },
-    "rogue":       { "name": "ladino",      "epithet": "dos telhados molhados" },
-    "guardian":    { "name": "guardião",    "epithet": "da névoa longa" },
-    "necromancer": { "name": "necromante",  "epithet": "do arquivo frio" }
+    "berserker": {
+      "name": "berserker",
+      "epithet": "da tempestade súbita"
+    },
+    "warrior": {
+      "name": "guerreiro",
+      "epithet": "da muralha noturna"
+    },
+    "healer": {
+      "name": "curandeiro",
+      "epithet": "do bosque calado"
+    },
+    "druid": {
+      "name": "druida",
+      "epithet": "do sétimo dia"
+    },
+    "finisher": {
+      "name": "finalizador",
+      "epithet": "do portão fechado"
+    },
+    "rogue": {
+      "name": "ladino",
+      "epithet": "dos telhados molhados"
+    },
+    "sentinel": {
+      "name": "sentinela",
+      "epithet": "da longa vigília"
+    },
+    "hermit": {
+      "name": "eremita",
+      "epithet": "da cela distante"
+    },
+    "mage": {
+      "name": "mago",
+      "epithet": "das torres flutuantes"
+    },
+    "wanderer": {
+      "name": "andarilho",
+      "epithet": "da estrada aberta"
+    },
+    "tracker": {
+      "name": "rastreador",
+      "epithet": "da trilha fria"
+    },
+    "necromancer": {
+      "name": "necromante",
+      "epithet": "do arquivo frio"
+    }
   },
   "ranks": {
     "apprentice": "aprendiz",
@@ -46,12 +92,31 @@
       "name": "rastreio",
       "effect": "Revela o que está quebrado antes de qualquer um perceber.",
       "measures": "issues abertas"
+    },
+    "burstfire": {
+      "name": "fogo em rajada",
+      "effect": "Tudo de uma vez, depois nada. Devastador e insustentável.",
+      "measures": "variância da atividade diária"
+    },
+    "sabbath": {
+      "name": "sabbath",
+      "effect": "Poder que só responde nos dias em que ninguém observa.",
+      "measures": "proporção de atividade no fim de semana"
     }
   },
   "debuffs": {
-    "lone_wolf":      { "name": "lobo solitário",   "effect": "Você não pode receber assistência." },
-    "revolving_door": { "name": "porta giratória",  "effect": "O que você abre raramente fecha." },
-    "ivory_tower":    { "name": "torre de marfim",  "effect": "Você só luta no seu próprio terreno." }
+    "lone_wolf": {
+      "name": "lobo solitário",
+      "effect": "Você não pode receber assistência."
+    },
+    "revolving_door": {
+      "name": "porta giratória",
+      "effect": "O que você abre raramente fecha."
+    },
+    "ivory_tower": {
+      "name": "torre de marfim",
+      "effect": "Você só luta no seu próprio terreno."
+    }
   },
   "ui": {
     "abilities": "habilidades",

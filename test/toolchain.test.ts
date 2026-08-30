@@ -4,6 +4,7 @@ import { campaignSeed, streamForAxis, seal } from '../src/identity/index.js';
 
 const heavyReviewer: Percentiles = {
   commits: 0.3, reviews: 0.95, merges: 0.5, streak: 0.5, repos: 0.5, issues: 0.8,
+  burst: 0.4, weekend: 0.3,
 };
 
 describe('toolchain smoke', () => {

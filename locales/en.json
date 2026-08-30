@@ -1,12 +1,58 @@
 {
-  "_meta": { "lang": "en", "complete": true, "note": "Source of truth. Every other locale falls back here." },
+  "_meta": {
+    "lang": "en",
+    "complete": true,
+    "note": "Source of truth. Every other locale falls back here."
+  },
   "classes": {
-    "warrior":     { "name": "warrior",     "epithet": "of the night wall" },
-    "mage":        { "name": "mage",        "epithet": "of the drifting spires" },
-    "healer":      { "name": "healer",      "epithet": "of the quiet grove" },
-    "rogue":       { "name": "rogue",       "epithet": "of the wet rooftops" },
-    "guardian":    { "name": "guardian",    "epithet": "of the long fog" },
-    "necromancer": { "name": "necromancer", "epithet": "of the cold archive" }
+    "berserker": {
+      "name": "berserker",
+      "epithet": "of the sudden storm"
+    },
+    "warrior": {
+      "name": "warrior",
+      "epithet": "of the night wall"
+    },
+    "healer": {
+      "name": "healer",
+      "epithet": "of the quiet grove"
+    },
+    "druid": {
+      "name": "druid",
+      "epithet": "of the seventh day"
+    },
+    "finisher": {
+      "name": "finisher",
+      "epithet": "of the closed gate"
+    },
+    "rogue": {
+      "name": "rogue",
+      "epithet": "of the wet rooftops"
+    },
+    "sentinel": {
+      "name": "sentinel",
+      "epithet": "of the long watch"
+    },
+    "hermit": {
+      "name": "hermit",
+      "epithet": "of the far cell"
+    },
+    "mage": {
+      "name": "mage",
+      "epithet": "of the drifting spires"
+    },
+    "wanderer": {
+      "name": "wanderer",
+      "epithet": "of the open road"
+    },
+    "tracker": {
+      "name": "tracker",
+      "epithet": "of the cold trail"
+    },
+    "necromancer": {
+      "name": "necromancer",
+      "epithet": "of the cold archive"
+    }
   },
   "ranks": {
     "apprentice": "apprentice",
@@ -46,12 +92,31 @@
       "name": "tracking",
       "effect": "Reveal what is broken before anyone else notices.",
       "measures": "issues opened"
+    },
+    "burstfire": {
+      "name": "burst fire",
+      "effect": "Everything at once, then nothing. Devastating and unsustainable.",
+      "measures": "daily activity variance"
+    },
+    "sabbath": {
+      "name": "sabbath",
+      "effect": "Power that only answers on the days nobody is watching.",
+      "measures": "weekend share of activity"
     }
   },
   "debuffs": {
-    "lone_wolf":       { "name": "lone wolf",       "effect": "You cannot receive assistance." },
-    "revolving_door":  { "name": "revolving door",  "effect": "What you open rarely closes." },
-    "ivory_tower":     { "name": "ivory tower",     "effect": "You only fight on your own ground." }
+    "lone_wolf": {
+      "name": "lone wolf",
+      "effect": "You cannot receive assistance."
+    },
+    "revolving_door": {
+      "name": "revolving door",
+      "effect": "What you open rarely closes."
+    },
+    "ivory_tower": {
+      "name": "ivory tower",
+      "effect": "You only fight on your own ground."
+    }
   },
   "ui": {
     "abilities": "abilities",

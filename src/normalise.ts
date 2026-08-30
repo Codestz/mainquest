@@ -10,6 +10,11 @@ export interface RawMetrics extends Record<Metric, number> {}
 
 export interface Stops { p10: number; p25: number; p50: number; p75: number; p90: number; p99: number }
 
+/** The metrics the model is defined over. The single source of truth here. */
+export const METRICS: readonly Metric[] = [
+  'commits', 'reviews', 'merges', 'streak', 'repos', 'issues', 'burst', 'weekend',
+];
+
 const STOPS = [10, 25, 50, 75, 90, 99] as const;
 
 /**
@@ -74,8 +79,12 @@ export function percentileOf(value: number, m: Stops): number {
 
 export function normalise(raw: RawMetrics): Percentiles {
   const out = {} as Percentiles;
-  for (const k of Object.keys(raw) as Metric[]) {
-    out[k] = Math.min(1, Math.max(0, percentileOf(raw[k], DISTRIBUTION.metrics[k])));
+  // Iterate the METRICS the model defines, not the caller's keys. Reading
+  // `Object.keys(raw)` meant any extra field on the input — a `total`, a
+  // `login` — was looked up in the distribution table and crashed on
+  // undefined. The caller decides what to pass; the model decides what counts.
+  for (const k of METRICS) {
+    out[k] = Math.min(1, Math.max(0, percentileOf(raw[k] ?? 0, DISTRIBUTION.metrics[k])));
   }
   return out;
 }
