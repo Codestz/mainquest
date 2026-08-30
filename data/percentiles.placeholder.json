@@ -1,0 +1,13 @@
+{
+  "generated": "PLACEHOLDER",
+  "sampleSize": 0,
+  "warning": "INVENTED NUMBERS. Not a real distribution. Every tier, rank and debuff derived from this file is arbitrary until data/percentiles.json is built from a real sample (see data/README.md). Used only so the renderer has something to draw.",
+  "metrics": {
+    "commits": { "p10": 12, "p25": 48, "p50": 180, "p75": 520, "p90": 1240, "p99": 4800 },
+    "reviews": { "p10": 0, "p25": 3, "p50": 21, "p75": 96, "p90": 310, "p99": 1400 },
+    "merges":  { "p10": 0, "p25": 2, "p50": 14, "p75": 58, "p90": 190, "p99": 900 },
+    "streak":  { "p10": 2, "p25": 5, "p50": 12, "p75": 31, "p90": 78, "p99": 240 },
+    "repos":   { "p10": 1, "p25": 2, "p50": 5, "p75": 12, "p90": 28, "p99": 90 },
+    "issues":  { "p10": 0, "p25": 1, "p50": 6, "p75": 24, "p90": 82, "p99": 400 }
+  }
+}
