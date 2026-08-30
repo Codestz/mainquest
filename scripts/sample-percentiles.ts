@@ -84,7 +84,7 @@ if (!TOKEN) {
 const HEADERS: Record<string, string> = {
   authorization: `Bearer ${TOKEN}`,
   accept: 'application/vnd.github+json',
-  'user-agent': 'questlog-sampler',
+  'user-agent': 'mainquest-sampler',
 };
 
 class HttpError extends Error {

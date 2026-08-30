@@ -30,7 +30,7 @@ const cards = FIXTURES.map((f) => {
   return { f, card };
 });
 
-const page = `<!doctype html><meta charset="utf-8"><title>Questlog — card preview</title>
+const page = `<!doctype html><meta charset="utf-8"><title>MainQuest — card preview</title>
 <style>
  body{margin:0;background:#0A0D14;color:#C6D4FF;font:13px/1.5 ui-monospace,monospace;padding:20px}
  h1{color:#fff;font-size:15px;letter-spacing:.1em;text-transform:uppercase}

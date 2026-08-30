@@ -24,7 +24,7 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 
 const run = promisify(execFile);
-const TMP = mkdtempSync(join(tmpdir(), 'questlog-merges-'));
+const TMP = mkdtempSync(join(tmpdir(), 'mainquest-merges-'));
 process.on('exit', () => rmSync(TMP, { recursive: true, force: true }));
 
 const arg = <T extends string | number>(k: string, d: T): T => {

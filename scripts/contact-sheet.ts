@@ -192,7 +192,7 @@ function page(icons: Icon[], stats: Record<string, number>): string {
         list.sort((a, b) => a.len - b.len).map(tile).join('')
       }</div></section>`).join('');
 
-  return `<!doctype html><meta charset="utf-8"><title>Questlog — charge contact sheet</title>
+  return `<!doctype html><meta charset="utf-8"><title>MainQuest — charge contact sheet</title>
 <style>
   :root { --bg:#0A0D14; --fg:#C6D4FF; --win:#16215C; --edge:#6B8CE0; --accent:#FFD866; }
   * { box-sizing:border-box }
@@ -247,7 +247,7 @@ function page(icons: Icon[], stats: Record<string, number>): string {
 </header>
 ${sections}
 <script>
-const KEY = 'questlog.charges';
+const KEY = 'mainquest.charges';
 const boxes = [...document.querySelectorAll('.t input')];
 const idOf = b => b.closest('.t').dataset.id;
 const saved = JSON.parse(localStorage.getItem(KEY) || 'null');

@@ -15,14 +15,17 @@
  * dark overhead and warm only at the horizon, so the value range is what makes
  * it read, not the hue. Same correction applied to Q1.
  */
-const SEASONS: ReadonlyArray<readonly [string, string, string]> = [
-  ['#2A2350', '#5A3E6F', '#B8705E'], // Q1  cold dawn
-  ['#1E4E7A', '#3F7FA8', '#7FB8CE'], // Q2  clear day
-  ['#2B2350', '#6B3A5C', '#C4703F'], // Q3  dusk
-  ['#141B4D', '#1E2A6B', '#34367F'], // Q4  deep night (docs/04 reference)
-];
+import type { Theme } from '../theme.js';
 
-export function sky(day: number): readonly [string, string, string] {
+/**
+ * Four hand-picked seasonal palettes, switched DISCRETELY.
+ *
+ * Linear-mixing dawn orange toward night navy runs the midpoint through mud,
+ * which is what the first render looked like. Four deliberate looks beat 365
+ * muddy ones, and it keeps docs/04's "three flat bands, never a gradient"
+ * rule honest.
+ */
+export function sky(day: number, th: Theme): readonly [string, string, string] {
   const q = Math.min(3, Math.max(0, Math.floor((day - 1) / 91.25)));
-  return SEASONS[q]!;
+  return th.seasons[q]!;
 }

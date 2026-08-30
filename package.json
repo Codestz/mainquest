@@ -1,5 +1,5 @@
 {
-  "name": "questlog",
+  "name": "mainquest",
   "version": "0.0.0",
   "private": true,
   "description": "Turns a GitHub profile into a 16-bit JRPG status screen.",

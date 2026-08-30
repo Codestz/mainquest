@@ -46,9 +46,9 @@ Read in this order:
 
 ## Reminders that are easy to lose
 
-- The name: npm `questlog` is **free**, the GitHub org is **taken**, and 535
-  repos already use the name. Only Marketplace publishing is blocked by it, so
-  it is safe to decide late — see `docs/07-open-questions.md#4`.
+- The name is **MainQuest** and it is decided (`docs/07-open-questions.md#4`).
+  `main` is the branch every card is built from; a *main quest* is what the card
+  depicts. npm is free; publish the action as `<owner>/mainquest`.
 - **Scheduled workflows die after 60 days of repo inactivity.** Commit weekly
   even when nothing changed, or the Action silently stops.
 - **No timestamps in the SVG output**, or every run is a diff.

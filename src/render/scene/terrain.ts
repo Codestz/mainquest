@@ -1,8 +1,12 @@
 /** The contribution grid, drawn as ground rather than as a chart. */
 
-export function terrain(weeks: number[], x0: number, y0: number): string {
+import type { Theme } from '../theme.js';
+
+export function terrain(
+  weeks: number[], x0: number, y0: number, th: Theme,
+): string {
   const max = Math.max(...weeks, 1);
-  const shades = ['#1B3320', '#2A5A32', '#4E9E3A', '#7FD152'];
+  const shades = th.terrain;
   let out = '';
   weeks.forEach((v, i) => {
     const lvl = v === 0 ? 0 : Math.min(3, Math.floor((v / max) * 3) + 1);

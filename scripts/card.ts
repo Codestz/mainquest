@@ -44,7 +44,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const client = new GitHubClient({ token: await token(), userAgent: 'questlog-card' });
+  const client = new GitHubClient({ token: await token(), userAgent: 'mainquest-card' });
 
   let profile;
   try {

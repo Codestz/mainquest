@@ -1,8 +1,6 @@
-# Questlog
+# MainQuest
 
 > Turns a GitHub profile into a 16-bit JRPG status screen that lives in your README.
-
-*Questlog is a placeholder name — see `docs/07-open-questions.md` before you commit to it.*
 
 ---
 
@@ -41,8 +39,8 @@ Layout is a paused JRPG menu: windows floating over a world.
 ## Quickstart (target API, not built yet)
 
 ```yaml
-# .github/workflows/questlog.yml
-name: questlog
+# .github/workflows/mainquest.yml
+name: mainquest
 on:
   schedule:
     - cron: '37 4 * * *'   # odd minute: :00 is heavily contended
@@ -55,15 +53,15 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: <owner>/questlog@v1
+      - uses: <owner>/mainquest@v1
         with:
-          github_token: ${{ secrets.QUESTLOG_PAT }}   # PAT, read:user
+          github_token: ${{ secrets.MAINQUEST_PAT }}   # PAT, read:user
           username: ${{ github.repository_owner }}
           lang: es
           outputs: dist/
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: 'chore: update questlog card'
+          commit_message: 'chore: update mainquest card'
 ```
 
 Then in your README:
@@ -72,7 +70,7 @@ Then in your README:
 <picture>
   <source media="(prefers-color-scheme: dark)"  srcset="dist/card-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="dist/card-light.svg">
-  <img alt="Questlog" src="dist/card-dark.svg">
+  <img alt="MainQuest" src="dist/card-dark.svg">
 </picture>
 ```
 

@@ -46,7 +46,7 @@ export class GitHubClient {
     this.headers = {
       authorization: `Bearer ${opts.token}`,
       accept: 'application/vnd.github+json',
-      'user-agent': opts.userAgent ?? 'questlog',
+      'user-agent': opts.userAgent ?? 'mainquest',
     };
     this.maxRateWaits = opts.maxRateWaits ?? 6;
   }

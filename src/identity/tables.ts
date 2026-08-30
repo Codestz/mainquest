@@ -17,7 +17,7 @@
 //
 // So sigil tables are frozen. The declared size is part of the table, a
 // mismatch throws at load, and the version is pinned per user in
-// `dist/questlog.state.json`. Growing the catalogue means shipping v2 and
+// `dist/mainquest.state.json`. Growing the catalogue means shipping v2 and
 // leaving existing users on v1 -- never editing v1 in place.
 
 export interface FrozenTable<T> {
