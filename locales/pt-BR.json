@@ -1,0 +1,66 @@
+{
+  "_meta": { "lang": "pt-BR", "complete": false, "note": "Flavour text must be transcreated by a native speaker, not translated." },
+  "classes": {
+    "warrior":     { "name": "guerreiro",   "epithet": "da muralha noturna" },
+    "mage":        { "name": "mago",        "epithet": "das torres flutuantes" },
+    "healer":      { "name": "curandeiro",  "epithet": "do bosque calado" },
+    "rogue":       { "name": "ladino",      "epithet": "dos telhados molhados" },
+    "guardian":    { "name": "guardião",    "epithet": "da névoa longa" },
+    "necromancer": { "name": "necromante",  "epithet": "do arquivo frio" }
+  },
+  "ranks": {
+    "apprentice": "aprendiz",
+    "journeyman": "oficial",
+    "veteran": "veterano",
+    "master": "mestre",
+    "archon": "arconte",
+    "subtitle": "você dá mais reviews do que recebe"
+  },
+  "abilities": {
+    "sustained_strike": {
+      "name": "golpe sustentado",
+      "effect": "Dano constante distribuído por toda a campanha.",
+      "measures": "commits"
+    },
+    "second_opinion": {
+      "name": "segunda opinião",
+      "effect": "Restaura os PR dos seus aliados antes que apodreçam na fila.",
+      "measures": "pull request reviews"
+    },
+    "close_the_loop": {
+      "name": "fechar o ciclo",
+      "effect": "Finalização. Transforma um PR aberto em algo que já está na main.",
+      "measures": "pull requests merged"
+    },
+    "endurance": {
+      "name": "resistência",
+      "effect": "Recupera vigor enquanto a sequência durar. Quebra no primeiro dia vazio.",
+      "measures": "dias consecutivos com atividade"
+    },
+    "open_fronts": {
+      "name": "frentes abertas",
+      "effect": "Atinge vários alvos ao mesmo tempo, com menos foco.",
+      "measures": "repositórios com contribuições"
+    },
+    "tracking": {
+      "name": "rastreio",
+      "effect": "Revela o que está quebrado antes de qualquer um perceber.",
+      "measures": "issues abertas"
+    }
+  },
+  "debuffs": {
+    "lone_wolf":      { "name": "lobo solitário",   "effect": "Você não pode receber assistência." },
+    "revolving_door": { "name": "porta giratória",  "effect": "O que você abre raramente fecha." },
+    "ivory_tower":    { "name": "torre de marfim",  "effect": "Você só luta no seu próprio terreno." }
+  },
+  "ui": {
+    "abilities": "habilidades",
+    "measures_prefix": "mede:",
+    "tier": "nível {n} de 3",
+    "casts_this_campaign": "{n} nesta campanha",
+    "sealed_activity": "atividade selada",
+    "campaign": "campanha {year}",
+    "relic": "relíquia",
+    "mother_tongue": "língua materna"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "_meta": { "lang": "es", "complete": true },
+  "classes": {
+    "warrior":     { "name": "guerrero",    "epithet": "de la muralla nocturna" },
+    "mage":        { "name": "mago",        "epithet": "de las agujas flotantes" },
+    "healer":      { "name": "sanador",     "epithet": "del bosque callado" },
+    "rogue":       { "name": "pícaro",      "epithet": "de los tejados mojados" },
+    "guardian":    { "name": "guardián",    "epithet": "de la niebla larga" },
+    "necromancer": { "name": "nigromante",  "epithet": "del archivo frío" }
+  },
+  "ranks": {
+    "apprentice": "aprendiz",
+    "journeyman": "oficial",
+    "veteran": "veterano",
+    "master": "maestro",
+    "archon": "arconte",
+    "subtitle": "das más reviews de las que recibes"
+  },
+  "abilities": {
+    "sustained_strike": {
+      "name": "golpe sostenido",
+      "effect": "Daño constante repartido a lo largo de toda la campaña.",
+      "measures": "commits"
+    },
+    "second_opinion": {
+      "name": "segunda opinión",
+      "effect": "Restaura los PR de tus aliados antes de que se pudran en la cola.",
+      "measures": "pull request reviews"
+    },
+    "close_the_loop": {
+      "name": "cerrar el círculo",
+      "effect": "Remate. Convierte un PR abierto en algo que ya está en main.",
+      "measures": "pull requests merged"
+    },
+    "endurance": {
+      "name": "aguante",
+      "effect": "Recuperas vigor mientras la racha siga viva. Se rompe al primer día vacío.",
+      "measures": "días consecutivos con actividad"
+    },
+    "open_fronts": {
+      "name": "frentes abiertos",
+      "effect": "Golpeas varios objetivos a la vez, con menos foco.",
+      "measures": "repositorios con contribuciones"
+    },
+    "tracking": {
+      "name": "rastreo",
+      "effect": "Revelas lo que está roto antes de que nadie lo note.",
+      "measures": "issues abiertos"
+    }
+  },
+  "debuffs": {
+    "lone_wolf":      { "name": "lobo solitario",  "effect": "No puedes recibir asistencia." },
+    "revolving_door": { "name": "puerta giratoria","effect": "Lo que abres rara vez se cierra." },
+    "ivory_tower":    { "name": "torre de marfil", "effect": "Solo peleas en tu propio terreno." }
+  },
+  "ui": {
+    "abilities": "habilidades",
+    "measures_prefix": "mide:",
+    "tier": "rango {n} de 3",
+    "casts_this_campaign": "{n} esta campaña",
+    "sealed_activity": "actividad sellada",
+    "campaign": "campaña {year}",
+    "relic": "reliquia",
+    "mother_tongue": "lengua madre"
+  }
+}

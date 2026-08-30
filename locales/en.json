@@ -1,0 +1,66 @@
+{
+  "_meta": { "lang": "en", "complete": true, "note": "Source of truth. Every other locale falls back here." },
+  "classes": {
+    "warrior":     { "name": "warrior",     "epithet": "of the night wall" },
+    "mage":        { "name": "mage",        "epithet": "of the drifting spires" },
+    "healer":      { "name": "healer",      "epithet": "of the quiet grove" },
+    "rogue":       { "name": "rogue",       "epithet": "of the wet rooftops" },
+    "guardian":    { "name": "guardian",    "epithet": "of the long fog" },
+    "necromancer": { "name": "necromancer", "epithet": "of the cold archive" }
+  },
+  "ranks": {
+    "apprentice": "apprentice",
+    "journeyman": "journeyman",
+    "veteran": "veteran",
+    "master": "master",
+    "archon": "archon",
+    "subtitle": "you give more reviews than you receive"
+  },
+  "abilities": {
+    "sustained_strike": {
+      "name": "sustained strike",
+      "effect": "Steady damage spread across the whole campaign.",
+      "measures": "commits"
+    },
+    "second_opinion": {
+      "name": "second opinion",
+      "effect": "Restores your allies' PRs before they rot in the queue.",
+      "measures": "pull request reviews"
+    },
+    "close_the_loop": {
+      "name": "close the loop",
+      "effect": "Finisher. Turns an open PR into something already in main.",
+      "measures": "pull requests merged"
+    },
+    "endurance": {
+      "name": "endurance",
+      "effect": "Recover vigour while the streak holds. Breaks on the first empty day.",
+      "measures": "consecutive active days"
+    },
+    "open_fronts": {
+      "name": "open fronts",
+      "effect": "Strike several targets at once, at reduced focus.",
+      "measures": "repositories contributed to"
+    },
+    "tracking": {
+      "name": "tracking",
+      "effect": "Reveal what is broken before anyone else notices.",
+      "measures": "issues opened"
+    }
+  },
+  "debuffs": {
+    "lone_wolf":       { "name": "lone wolf",       "effect": "You cannot receive assistance." },
+    "revolving_door":  { "name": "revolving door",  "effect": "What you open rarely closes." },
+    "ivory_tower":     { "name": "ivory tower",     "effect": "You only fight on your own ground." }
+  },
+  "ui": {
+    "abilities": "abilities",
+    "measures_prefix": "measures:",
+    "tier": "tier {n} of 3",
+    "casts_this_campaign": "{n} this campaign",
+    "sealed_activity": "sealed activity",
+    "campaign": "campaign {year}",
+    "relic": "relic",
+    "mother_tongue": "mother tongue"
+  }
+}

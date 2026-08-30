@@ -1,0 +1,46 @@
+name: 'Questlog'
+description: 'Render your GitHub profile as an animated 16-bit JRPG status screen.'
+author: 'codestz'
+branding:
+  icon: 'shield'
+  color: 'purple'
+
+inputs:
+  github_token:
+    description: 'PAT with read:user. GITHUB_TOKEN scope is inconsistent for user-level contribution queries and will not return restrictedContributionsCount.'
+    required: true
+  username:
+    description: 'GitHub login to render.'
+    required: false
+    default: ${{ github.repository_owner }}
+  lang:
+    description: 'en | es | pt-BR'
+    required: false
+    default: 'en'
+  outputs:
+    description: 'Directory to write the SVG files into.'
+    required: false
+    default: 'dist'
+  themes:
+    description: 'Comma-separated: dark,light'
+    required: false
+    default: 'dark,light'
+  motion:
+    description: 'Comma-separated: animated,still'
+    required: false
+    default: 'animated,still'
+  campaign:
+    description: 'Year to render. Defaults to the current calendar year. See docs/07-open-questions.md — rolling vs calendar is UNDECIDED.'
+    required: false
+
+outputs:
+  character_class:
+    description: 'Derived class slug (warrior, mage, ...)'
+  rank:
+    description: 'Derived seniority rank slug'
+  changed:
+    description: 'true if any output file differs from the previous run'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'   # ncc-bundled
