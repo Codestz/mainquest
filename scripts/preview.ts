@@ -24,6 +24,7 @@ const cards = FIXTURES.map((f) => {
     login: f.login, campaign: CAMPAIGN, p: normalise(f.raw), raw: f.raw,
     weeks: f.weeks, restricted: f.restricted, accountAgeYears: f.accountAgeYears,
     prsOpened: f.prsOpened, campaignDay: DAY,
+    calendarTotal: f.weeks.reduce((a, b) => a + b, 0) + f.restricted,
   });
   writeFileSync(`build/cards/${f.login}.svg`, card.svg);
   return { f, card };

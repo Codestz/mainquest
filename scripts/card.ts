@@ -67,6 +67,7 @@ async function main(): Promise<void> {
     accountAgeYears: profile.accountAgeYears,
     prsOpened: profile.prsOpened,
     campaignDay: profile.campaignDay,
+    calendarTotal: profile.calendarTotal,
   });
 
   mkdirSync(OUT, { recursive: true });
@@ -77,7 +78,8 @@ async function main(): Promise<void> {
   console.log(`${profile.login} — ${card.klass}  (campaign ${profile.campaign}, day ${profile.campaignDay})`);
   console.log(`  commits ${r.commits} · reviews ${r.reviews} · merges ${r.merges}${profile.mergesAreReal ? '' : ' (proxied)'}`);
   console.log(`  streak ${r.streak} · repos ${r.repos} · issues ${r.issues}`);
-  console.log(`  burst ${r.burst} · weekend ${r.weekend} · sealed ${profile.restricted}`);
+  const pubShare = profile.calendarTotal > 0 ? (profile.calendarTotal - profile.restricted) / profile.calendarTotal : 0;
+  console.log(`  burst ${r.burst} · weekend ${r.weekend} · sealed ${profile.restricted} of ${profile.calendarTotal} (${(100 * pubShare).toFixed(1)}% public)`);
   console.log(`  charge ${card.credit.id}  ->  ${path} (${(card.svg.length / 1024).toFixed(1)} KB)`);
 }
 

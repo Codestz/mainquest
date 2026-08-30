@@ -28,6 +28,11 @@ export interface Profile {
   campaignDay: number;
   /** False when `merges` fell back to PRs opened, so the card can say so. */
   mergesAreReal: boolean;
+  /**
+   * Contribution-calendar total, which INCLUDES private days. Compared against
+   * `restricted` it says how much of this person the card can actually see.
+   */
+  calendarTotal: number;
 }
 
 export class ProfileNotFound extends Error {
@@ -108,5 +113,6 @@ export async function fetchProfile(
     prsOpened: c.totalPullRequestContributions,
     campaignDay: dayOfCampaign(campaign, opts.now),
     mergesAreReal,
+    calendarTotal: c.contributionCalendar.totalContributions,
   };
 }

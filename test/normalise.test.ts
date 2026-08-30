@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normalise, percentileOf, DISTRIBUTION, IS_PLACEHOLDER, isDegenerate } from '../src/normalise.js';
-import { hasSignal, classMargin, type Metric } from '../src/derive.js';
+import { hasSignal, classMargin, standing, type Metric } from '../src/derive.js';
 
 const METRICS: Metric[] = [
   'commits', 'reviews', 'merges', 'streak', 'repos', 'issues', 'burst', 'weekend',
@@ -99,5 +99,39 @@ describe('the empty state', () => {
     });
     expect(hasSignal(shaped)).toBe(true);
     expect(classMargin(shaped)).toBeGreaterThan(0);
+  });
+});
+
+describe('standing — what the card may claim', () => {
+  const shaped = normalise({
+    commits: 639, reviews: 0, merges: 40, streak: 12, repos: 8, issues: 0,
+    burst: 1029, weekend: 445,
+  });
+  const sliver = normalise({
+    commits: 3, reviews: 1, merges: 0, streak: 6, repos: 1, issues: 0,
+    burst: 731, weekend: 6,
+  });
+
+  it('classes an account whose work is mostly public', () => {
+    expect(standing(shaped, { sealed: 156, total: 844 })).toBe('classed');
+  });
+
+  it('withholds the class when the work is mostly sealed', () => {
+    // A real account: 1,395 private against 3 commits and 1 review. The card
+    // called it `healer` on the strength of that single review — 0.3% of the
+    // work it actually did. Confidently wrong is worse than empty.
+    expect(standing(sliver, { sealed: 1395, total: 1400 })).toBe('sealed');
+  });
+
+  it('is unclassed only when there is nothing at all', () => {
+    const flat = normalise({
+      commits: 0, reviews: 0, merges: 0, streak: 0, repos: 0, issues: 0, burst: 0, weekend: 0,
+    });
+    expect(standing(flat, { sealed: 0, total: 0 })).toBe('unclassed');
+  });
+
+  it('does not seal an account that is simply quiet in public', () => {
+    // Low volume is not the same as hidden: 40 of 50 visible still classes.
+    expect(standing(shaped, { sealed: 10, total: 50 })).toBe('classed');
   });
 });

@@ -14,7 +14,7 @@
  */
 
 import en from '../../locales/en.json' with { type: 'json' };
-import { classify, classMargin, hasSignal, rank, debuffs, type Percentiles } from '../derive.js';
+import { classify, classMargin, standing, rank, debuffs, type Percentiles } from '../derive.js';
 import { campaignSeed, pick, seal, streamForAxis } from '../identity/index.js';
 import { DISTRIBUTION, MERGES_IS_PROXY, isDegenerate } from '../normalise.js';
 import { composeSigil } from './sigil/index.js';
@@ -36,6 +36,8 @@ export interface CardInput {
   prsOpened: number;
   /** 1..365 -- drives the sky. Same for every card rendered the same day. */
   campaignDay: number;
+  /** Contribution-calendar total, INCLUDING sealed days. Decides standing. */
+  calendarTotal: number;
 }
 
 
@@ -52,8 +54,9 @@ export interface Card { svg: string; credit: { id: string; author: string }; kla
 export function renderCard(i: CardInput): Card {
   const L = en;
   const [klass, sub] = classify(i.p);
-  // A flat vector has no shape to classify. Say so rather than inventing one.
-  const classified = hasSignal(i.p);
+  // What the card is entitled to claim, given what it can see.
+  const state = standing(i.p, { sealed: i.restricted, total: i.calendarTotal });
+  const classified = state === 'classed';
   const margin = classMargin(i.p);
   const rk = rank(i.raw['reviews'] ?? 0, i.prsOpened, i.accountAgeYears);
   const debs = debuffs(i.p);
@@ -113,6 +116,12 @@ export function renderCard(i: CardInput): Card {
       : margin < 0.03
         ? `hybrid · also ${L.classes[sub].name}`
         : `path of the ${L.classes[sub].name}`, 11, EDGE);
+  } else if (state === 'sealed') {
+    // The rhythm is real (the calendar counts private days); the role is not
+    // knowable, because a restricted count carries no type.
+    s += t(76, 60, `sealed · ${L.ranks[rk as keyof typeof L.ranks]}`, 11, ACCENT);
+    s += t(76, 76, 'the work is behind a door', 11, EDGE);
+    s += t(76, 92, 'rhythm known, role not', 11, EDGE);
   } else {
     s += t(76, 60, 'unclassed', 11, ACCENT);
     s += t(76, 76, 'the campaign has not begun', 11, EDGE);

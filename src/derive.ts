@@ -115,6 +115,49 @@ export function hasSignal(p: Percentiles): boolean {
   return Math.sqrt(variance) > 0.01;
 }
 
+/** How the card should describe someone, given what it can actually see. */
+export type Standing =
+  /** Enough public, typed activity to name a class. */
+  | 'classed'
+  /** Most work is private. The rhythm is known; the role is not. */
+  | 'sealed'
+  /** Nothing to go on yet. */
+  | 'unclassed';
+
+export interface Visibility {
+  /** `restrictedContributionsCount` — private work, count only, no type. */
+  sealed: number;
+  /** Contribution-calendar total. INCLUDES the sealed days. */
+  total: number;
+}
+
+/**
+ * What the card is entitled to claim.
+ *
+ * `restrictedContributionsCount` is a bare number: docs/02 notes it tells you
+ * how many private contributions there were but not what type. So for someone
+ * whose work is mostly behind SSO, every TYPED metric — commits, reviews,
+ * merges, repos, issues — describes only the sliver that happens to be public,
+ * and classifying on it is classifying on noise.
+ *
+ * A real case: 1,395 sealed against 3 commits and 1 review. The card called
+ * that account `healer`, on the strength of one review — 0.3% of the work it
+ * actually did. `docs/02` predicted exactly this ("the card can come out nearly
+ * empty and they'll assume it's broken"); it is worse than empty, because it is
+ * confidently wrong.
+ *
+ * The rhythm survives, though. The contribution CALENDAR counts private days,
+ * so streak, burst, weekend and the terrain are all true. Hence a third
+ * standing rather than a binary: we know when they work, not what they did.
+ */
+export function standing(p: Percentiles, v: Visibility): Standing {
+  if (v.total <= 0) return 'unclassed';
+  const publicShare = (v.total - v.sealed) / v.total;
+  // Below this, the typed metrics describe too little of the person to name.
+  if (publicShare < 0.35) return 'sealed';
+  return hasSignal(p) ? 'classed' : 'unclassed';
+}
+
 /**
  * The margin by which the winning class beat the runner-up.
  *
