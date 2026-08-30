@@ -1,5 +1,19 @@
 # Attribution
 
+## How attribution travels
+
+CC BY 3.0 §4(b) requires attribution "reasonable to the medium or means You are
+utilizing". A rendered card is embedded in READMEs across the internet **on its
+own**, so a NOTICE file left in this repository does not travel with it and
+does not satisfy the licence for that copy.
+
+Every rendered SVG therefore carries its own `<metadata>` block naming the
+charge, its author, game-icons.net, the licence and its URI, and stating that
+the work was adapted (recoloured and composited into a sigil). That is the
+medium's own mechanism for this and costs ~200 bytes.
+
+This file remains the repository-level notice and the full contributor list.
+
 ## Icons
 
 [game-icons.net](https://game-icons.net) — **CC BY 3.0**, attribution required

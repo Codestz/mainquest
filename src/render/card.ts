@@ -89,6 +89,25 @@ export function renderCard(i: CardInput): Card {
   let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img">`;
   s += `<title>${esc(i.login)} — ${L.classes[klass].name}, ${L.ranks[rk as keyof typeof L.ranks]} — a MainQuest character sheet derived from public GitHub activity</title>`;
   s += `<desc>Class from the shape of contribution activity, not its volume. Sigil is generated from the login and never changes.</desc>`;
+  /**
+   * Attribution travels WITH the artwork, not just in the repository.
+   *
+   * The charge in this card's sigil is CC BY 3.0, and this SVG is embedded in
+   * READMEs all over the internet on its own. CC BY 3.0 s.4(b) requires
+   * attribution "reasonable to the medium or means You are utilizing" — the
+   * author's name, the URI, and for an adaptation a credit identifying the
+   * use. A NOTICE file left behind in the repository does not travel with the
+   * file, so it does not satisfy that for a standalone SVG.
+   *
+   * <metadata> is the medium's own mechanism for exactly this, and costs ~200
+   * bytes.
+   */
+  s += `<metadata>` +
+    `<![CDATA[Heraldic charge "${esc(sig.credit.id.split('/')[1] ?? '')}" by ` +
+    `${esc(sig.credit.author)} from game-icons.net (https://game-icons.net), ` +
+    `licensed CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/). ` +
+    `Recoloured and composited into a heraldic sigil by MainQuest.]]>` +
+    `</metadata>`;
 
   // --- sky: NOT drifted -----------------------------------------------------
   // skyBand is 'fixed' (docs/07#7): every card rendered on the same day gets
