@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { classify, rank, debuffs, type Percentiles } from '../src/derive.js';
-import { campaignSeed, streamForAxis, seal } from '../src/identity.js';
+import { campaignSeed, streamForAxis, seal } from '../src/identity/index.js';
 
 const heavyReviewer: Percentiles = {
   commits: 0.3, reviews: 0.95, merges: 0.5, streak: 0.5, repos: 0.5, issues: 0.8,

@@ -1,5 +1,5 @@
 /**
- * The card. String templating, not a DOM library -- the output is text.
+ * The card: layout and orchestration only.
  *
  * Layout rule (docs/04): ONE frame. The scene fills the canvas and the windows
  * float over it. The contribution grid is the ground the character stands on,
@@ -7,36 +7,22 @@
  *
  * Determinism (docs/01): no timestamps, integer coordinates, same input ->
  * byte-identical output.
+ *
+ * Everything this file draws, it delegates. It knows WHERE things go, not how
+ * they are chosen or rendered — so the scene, the sigil and the identity layer
+ * can all change underneath it.
  */
 
 import en from '../../locales/en.json' with { type: 'json' };
-import { classify, rank, debuffs, type ClassName, type Percentiles } from '../derive.js';
-import { campaignSeed, pick, seal, streamForAxis } from '../identity.js';
+import { classify, rank, debuffs, type Percentiles } from '../derive.js';
+import { campaignSeed, pick, seal, streamForAxis } from '../identity/index.js';
 import { DISTRIBUTION, MERGES_IS_PROXY, isDegenerate } from '../normalise.js';
-import { composeSigil } from './sigil.js';
-import SPRITES from '../../data/sprites.v1.json' with { type: 'json' };
-
-interface Sprite { w: number; h: number; bytes: number; dataUri: string }
-const FAMILIAR_TABLE = SPRITES.familiars as Record<string, Sprite>;
-const CLASS_TABLE = SPRITES.classes as Record<string, Sprite>;
-const FAMILIARS = Object.keys(FAMILIAR_TABLE) as [string, ...string[]];
-
-const W = 880, H = 420;
-
-// docs/04 palette. Window chrome is identical for every user -- non-negotiable.
-const WIN = '#16215C', EDGE = '#6B8CE0', INK = '#FFFFFF', DIM = '#C6D4FF';
-const ACCENT = '#FFD866', ROW = '#25317A';
-
-const esc = (s: string): string =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-const t = (x: number, y: number, s: string, size: number, fill = INK, extra = '') =>
-  `<text x="${x}" y="${y}" font-family="ui-monospace,monospace" font-size="${size}" fill="${fill}"${extra}>${esc(s)}</text>`;
-
-/** Classic JRPG menu chrome: square corners, double border, identical always. */
-const win = (x: number, y: number, w: number, h: number) =>
-  `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${WIN}" stroke="${INK}" stroke-width="2"/>` +
-  `<rect x="${x + 5}" y="${y + 5}" width="${w - 10}" height="${h - 10}" fill="none" stroke="${EDGE}" stroke-width="1"/>`;
+import { composeSigil } from './sigil/index.js';
+import { ACCENT, DIM, EDGE, H, ROW, W, esc, t, win } from './theme.js';
+import { sky } from './scene/sky.js';
+import { horizon } from './scene/horizon.js';
+import { terrain } from './scene/terrain.js';
+import { sprite, FAMILIARS } from './scene/sprite.js';
 
 export interface CardInput {
   login: string;
@@ -52,6 +38,7 @@ export interface CardInput {
   campaignDay: number;
 }
 
+
 const ABILITY_OF: Record<string, keyof typeof en.abilities> = {
   commits: 'sustained_strike', reviews: 'second_opinion', merges: 'close_the_loop',
   streak: 'endurance', repos: 'open_fronts', issues: 'tracking',
@@ -59,125 +46,8 @@ const ABILITY_OF: Record<string, keyof typeof en.abilities> = {
 
 const tier = (v: number): number => (v >= 0.85 ? 3 : v >= 0.5 ? 2 : 1);
 
-/**
- * Sky = day-of-campaign, not peak commit hour (docs/07#3). 'fixed': everyone
- * rendering on the same day gets the same sky, which is what makes the set read
- * as one game.
- *
- * Four hand-picked seasonal palettes, switched discretely -- NOT interpolated.
- * Linear-mixing dawn orange toward night navy runs the midpoint through mud,
- * which is exactly what the first render looked like. Four deliberate looks
- * beat 365 muddy ones, and it keeps docs/04's "three flat bands, never a
- * gradient" rule honest.
- */
-/**
- * Bands run top -> horizon. Each palette darkens upward, so the sky sits behind
- * the windows rather than competing with them.
- *
- * Q3 was `#8C4A2E / #A85C52 / #5E4272` and read as flat brown: a mid-value
- * orange at full saturation across the largest band on the card. Real dusk is
- * dark overhead and warm only at the horizon, so the value range is what makes
- * it read, not the hue. Same correction applied to Q1.
- */
-const SEASONS: ReadonlyArray<readonly [string, string, string]> = [
-  ['#2A2350', '#5A3E6F', '#B8705E'], // Q1  cold dawn
-  ['#1E4E7A', '#3F7FA8', '#7FB8CE'], // Q2  clear day
-  ['#2B2350', '#6B3A5C', '#C4703F'], // Q3  dusk
-  ['#141B4D', '#1E2A6B', '#34367F'], // Q4  deep night (docs/04 reference)
-];
 
-function sky(day: number): readonly [string, string, string] {
-  const q = Math.min(3, Math.max(0, Math.floor((day - 1) / 91.25)));
-  return SEASONS[q]!;
-}
-
-/** The horizon IS your year: 12 monthly totals become the mountain ridge. */
-function horizon(weeks: number[], y: number, colour: string): string {
-  const months = Array.from({ length: 12 }, (_, m) => {
-    const slice = weeks.slice(Math.floor((m * 52) / 12), Math.floor(((m + 1) * 52) / 12));
-    return slice.reduce((a, b) => a + b, 0);
-  });
-  const max = Math.max(...months, 1);
-  const pts = months.map((v, i) => {
-    const x = Math.round((i / 11) * W);
-    return `${x},${Math.round(y - (v / max) * 58)}`;
-  });
-  return `<polygon points="0,${H} ${pts.join(' ')} ${W},${H}" fill="${colour}"/>`;
-}
-
-/** The contribution grid, drawn as ground rather than as a chart. */
-function terrain(weeks: number[], x0: number, y0: number): string {
-  const max = Math.max(...weeks, 1);
-  const shades = ['#1B3320', '#2A5A32', '#4E9E3A', '#7FD152'];
-  let out = '';
-  weeks.forEach((v, i) => {
-    const lvl = v === 0 ? 0 : Math.min(3, Math.floor((v / max) * 3) + 1);
-    const x = x0 + i * 16;
-    for (let r = 0; r < 4; r++) {
-      const jitter = (i * 7 + r * 13) % 3;
-      out += `<rect x="${x}" y="${y0 + r * 10}" width="15" height="9" fill="${shades[Math.max(0, Math.min(3, lvl - (r > 1 ? 1 : 0) + (jitter === 0 ? 0 : 0)))]}" opacity="${1 - r * 0.14}"/>`;
-    }
-  });
-  return `<g>${out}<animate attributeName="opacity" from="0" to="1" dur="0.9s" fill="freeze"/></g>`;
-}
-
-/**
- * Placeholder silhouette. Real sprites are a commission (docs/07#5).
- *
- * Light on dark with a dark outline: the first version was #1B1540 on the
- * terrain and simply vanished. A placeholder that cannot be seen is worse than
- * no placeholder -- it hides the layout problem it exists to expose.
- *
- * `y` is the ground line: the figure stands ON it rather than floating above.
- */
-/**
- * The character, standing on the ground line.
- *
- * `spriteBase` is data (your class); the `familiar` beside it is seed, drawn
- * from the PERMANENT identity lane — so your companion is yours for as long as
- * the login exists, the same rule as the crest (docs/07#7).
- *
- * Both are base64 PNGs inlined as data URIs: an SVG in an <img> cannot load
- * anything external (docs/04). `image-rendering: pixelated` is mandatory — a
- * 40px sprite scaled up without it is blurred to mush.
- */
-function sprite(
-  x: number,
-  groundY: number,
-  klass: ClassName,
-  familiarKey: string,
-  scale = 2,
-): string {
-  const c = CLASS_TABLE[klass]!;
-  const f = FAMILIAR_TABLE[familiarKey];
-  const w = c.w * scale, h = c.h * scale;
-
-  let out = `<g>`;
-  out += `<ellipse cx="${x}" cy="${groundY + 2}" rx="${Math.round(w * 0.42)}" ry="5" fill="#0B1A10" opacity=".45"/>`;
-
-  // Idle bob: small, slow, and the only motion on the character (docs/04's
-  // animation budget — everything that loops must be cheap).
-  out += `<g><animateTransform attributeName="transform" type="translate" ` +
-    `values="0 0; 0 -3; 0 0" dur="1.9s" repeatCount="indefinite" calcMode="spline" ` +
-    `keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" keyTimes="0;0.5;1"/>` +
-    `<image href="${c.dataUri}" x="${Math.round(x - w / 2)}" y="${groundY - h}" ` +
-    `width="${w}" height="${h}" image-rendering="pixelated"/></g>`;
-
-  if (f) {
-    const fw = f.w * (scale - 0.6), fh = f.h * (scale - 0.6);
-    // Offset phase so the pair never bobs in unison — two things moving on the
-    // same beat reads as one object.
-    out += `<g><animateTransform attributeName="transform" type="translate" ` +
-      `values="0 0; 0 -5; 0 0" dur="2.7s" begin="-0.9s" repeatCount="indefinite" ` +
-      `calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" keyTimes="0;0.5;1"/>` +
-      `<image href="${f.dataUri}" x="${Math.round(x + w / 2 + 6)}" ` +
-      `y="${Math.round(groundY - h * 0.85)}" width="${Math.round(fw)}" height="${Math.round(fh)}" ` +
-      `image-rendering="pixelated" opacity=".95"/></g>`;
-  }
-  return out + `</g>`;
-}
-
-export interface Card { svg: string; credit: { id: string; author: string }; klass: ClassName }
+export interface Card { svg: string; credit: { id: string; author: string }; klass: import('../derive.js').ClassName }
 
 export function renderCard(i: CardInput): Card {
   const L = en;

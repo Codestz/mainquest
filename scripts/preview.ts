@@ -12,7 +12,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { FIXTURES } from '../src/fixtures.js';
 import { normalise } from '../src/normalise.js';
 import { renderCard } from '../src/render/card.js';
-import { sigilCombinations } from '../src/render/sigil.js';
+import { sigilCombinations } from '../src/render/sigil/index.js';
 
 const CAMPAIGN = 2026;
 const DAY = Number(process.env['DAY'] ?? 242);

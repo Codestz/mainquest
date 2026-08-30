@@ -4,8 +4,8 @@ import {
   identitySeed, campaignSeed, streamForAxis, laneFor, pick, seal,
   frozenTable, drawFrom, SIGIL_DIMENSIONS, sigilSpace, expectedCollisions,
   drawFlourish, FLOURISHES, type Source,
-} from '../src/identity.js';
-import { sigilCombinations } from '../src/render/sigil.js';
+} from '../src/identity/index.js';
+import { sigilCombinations } from '../src/render/sigil/index.js';
 
 const policy = seedPolicy();
 
