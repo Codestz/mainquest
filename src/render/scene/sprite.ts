@@ -20,7 +20,7 @@ export const FAMILIARS = Object.keys(FAMILIAR_TABLE) as [string, ...string[]];
 export function sprite(
   x: number,
   groundY: number,
-  klass: ClassName,
+  klass: ClassName | 'novice',
   familiarKey: string,
   scale = 2,
 ): string {

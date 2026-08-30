@@ -94,7 +94,10 @@ export function renderCard(i: CardInput): Card {
     // The gap between the status window (ends x=316) and the ability window
   // (starts x=560) was dead space. The character belongs there.
   const familiar = pick(streamForAxis(i.login, i.campaign, 'spriteAccessory'), FAMILIARS);
-  s += sprite(416, 258, klass, familiar, 2);
+  // The art must not claim what the text declines to. Rendering the berserker
+  // sprite beside "unclassed" said two different things at once — `novice` is
+  // a deliberately plain, unarmed figure, and it is NOT a thirteenth class.
+  s += sprite(416, 258, classified ? klass : 'novice', familiar, 2);
 
   // --- status window ---
   s += win(16, 16, 300, 104);
