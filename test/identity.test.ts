@@ -3,7 +3,7 @@ import {
   AXES, MEASURED_ADJACENT, SEED_SCOPE, seedPolicy, seededAxes,
   identitySeed, campaignSeed, streamForAxis, laneFor, pick, seal,
   frozenTable, drawFrom, SIGIL_DIMENSIONS, sigilSpace, expectedCollisions,
-  type Source,
+  drawFlourish, FLOURISHES, type Source,
 } from '../src/identity.js';
 import { sigilCombinations } from '../src/render/sigil.js';
 
@@ -157,5 +157,36 @@ describe('curation — all good, and still distinct', () => {
       expect(d.size).toBeGreaterThan(1);
       expect(d.note.length).toBeGreaterThan(20);
     }
+  });
+});
+
+describe('flourish — luck, never merit', () => {
+  const N = 20_000;
+  const seen: Record<string, number> = {};
+  for (let i = 0; i < N; i++) {
+    const f = drawFlourish(`dev-${i}`);
+    seen[f] = (seen[f] ?? 0) + 1;
+  }
+
+  it('matches its declared weights', () => {
+    const total = FLOURISHES.reduce((n, [, w]) => n + w, 0);
+    for (const [name, w] of FLOURISHES) {
+      expect((seen[name] ?? 0) / N, name).toBeCloseTo(w / total, 2);
+    }
+  });
+
+  it('keeps shiny a genuine surprise', () => {
+    expect((seen['shiny'] ?? 0) / N).toBeLessThan(0.02);
+    expect(seen['shiny']).toBeGreaterThan(0);
+  });
+
+  it('is permanent, like the crest it decorates', () => {
+    expect(drawFlourish('codestz')).toBe(drawFlourish('codestz'));
+  });
+
+  it('stays out of the distinctness space it does not uniformly multiply', () => {
+    // A 1-in-200 outcome counted as "x4 distinctness" would overstate the space
+    // the collision floor is asserted against.
+    expect(SIGIL_DIMENSIONS.map((d) => d.name)).not.toContain('flourish');
   });
 });
