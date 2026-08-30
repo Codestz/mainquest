@@ -28,10 +28,27 @@ Kier Heyl · Aussiesim · Sparker · Zeromancer (CC0) · Rihlsul · Quoting ·
 Guard13007 · DarkZaitzev · SpencerDub · GeneralAce135 · Zajkonur · Catsu ·
 Starseeker · Pepijn Poolman · Pierre Leducq · Caro Asercion · SeregaCthtuf
 
-**Before shipping:** replace this list with the contributors actually
-represented in `data/charges.v1.json`, each with the upstream URL from
-`license.txt`. CC BY requires naming the author — a blanket "icons by
-game-icons.net" does not satisfy it.
+## Contributors represented in the frozen charge table (v1, 192 icons)
+
+CC BY requires naming the author — a blanket "icons by game-icons.net" does not
+satisfy it. These are the contributors whose work is actually in
+`data/charges.v1.json`:
+
+| Contributor | Icons |
+|---|---|
+| lorc | 105 |
+| delapouite | 65 |
+| caro-asercion | 11 |
+| darkzaitzev | 2 |
+| skoll | 2 |
+| faithtoken | 2 |
+| carl-olsen | 2 |
+| sparker | 1 |
+| sbed | 1 |
+| willdabeast | 1 |
+
+Upstream URLs are in `license.txt` of the game-icons repository. Regenerate this
+table whenever the charge table version changes.
 
 ## Sprites
 Sources under consideration:

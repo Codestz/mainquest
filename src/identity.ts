@@ -316,7 +316,7 @@ export interface Dimension {
  * collisions up without someone seeing the number move.
  */
 export const SIGIL_DIMENSIONS: readonly Dimension[] = [
-  { name: 'shield', size: 6, risk: 'free',
+  { name: 'shield', size: 12, risk: 'free',
     note: 'Outline only. Cannot clash with anything it contains.' },
   { name: 'tincturePair', size: 24, risk: 'curated',
     note: 'Field + charge colours, contrast-checked as a pair, both themes.' },
@@ -324,11 +324,15 @@ export const SIGIL_DIMENSIONS: readonly Dimension[] = [
     note: 'Geometric band under the charge. Curated for charge legibility.' },
   { name: 'charge', size: 192, risk: 'curated',
     note: 'game-icons.net paths that still read at 28px. Most of the 4,000 do not.' },
-  { name: 'chargeTincture', size: 3, risk: 'curated',
-    note: 'Which of the pair the charge takes, or the metal.' },
-  { name: 'cadency', size: 12, risk: 'free',
+  { name: 'cadency', size: 16, risk: 'free',
     note: 'Small mark, fixed corner, never overlaps. This is the free distinctness.' },
 ];
+
+// NOTE: `chargeTincture` (3) used to be declared here and was never built. The
+// declared product therefore claimed 3x the distinctness the composer actually
+// produced, and the space-floor test passed on a number nothing rendered. The
+// test now asserts declared == actual (see sigilCombinations), so a dimension
+// cannot be claimed without existing.
 
 export const sigilSpace = (): number =>
   SIGIL_DIMENSIONS.reduce((n, d) => n * d.size, 1);

@@ -11,19 +11,25 @@
  * what they contain.
  */
 
-import charges from '../../data/charges.v0.json' with { type: 'json' };
+import charges from '../../data/charges.v1.json' with { type: 'json' };
 import { frozenTable, drawFrom, streamForAxis, type FrozenTable } from '../identity.js';
 
 // --- tables ----------------------------------------------------------------
 
 /** Outline only, so it cannot clash with the field or charge. */
-const SHIELDS = frozenTable(1, 6, [
+const SHIELDS = frozenTable(1, 12, [
   'M6 4h88v52c0 30-20 46-44 56C26 102 6 86 6 56Z',                 // heater
   'M6 4h88v66c0 24-22 42-44 42S6 94 6 70Z',                        // round-base
   'M6 4h88v104H6Z',                                                 // square
   'M50 2 96 22v42c0 26-22 44-46 50C26 108 4 90 4 64V22Z',          // pointed
   'M6 4h88v50c0 34-30 42-44 58-14-16-44-24-44-58Z',                // spanish
   'M14 4h72c8 0 8 8 8 16v40c0 30-22 46-44 52C28 106 6 90 6 60V20c0-12 0-16 8-16Z', // curved
+  'M6 4h88v76c0 16-14 28-44 32C20 108 6 96 6 80Z',                 // deep heater
+  'M6 12c14-8 30-8 44 0 14-8 30-8 44 0v46c0 30-20 46-44 56C26 104 6 88 6 58Z', // double-arch chief
+  'M50 2l44 18v40c0 32-20 48-44 56C26 108 6 92 6 60V20Z',          // tall pointed
+  'M6 4h88v40c0 40-26 52-44 64C32 96 6 84 6 44Z',                  // wide bottom
+  'M18 4h64l12 16v44c0 28-22 44-44 52C28 108 6 92 6 64V20Z',       // cut corners
+  'M6 4h88v58c0 26-18 40-44 52C24 102 6 88 6 62Z',                 // shallow
 ] as const);
 
 /**
@@ -59,8 +65,9 @@ const TINCTURES = frozenTable<readonly [string, string]>(1, 24, [
 ] as const);
 
 /** Small mark, fixed corner, fixed size. Cannot overlap the charge. */
-const CADENCY = frozenTable(1, 12, [
-  '', 'M0-7 2-2h5l-4 4 1 5-4-3-4 3 1-5-4-4h5Z',              // none, mullet
+const CADENCY = frozenTable(1, 16, [
+  '',                                                        // none
+  'M0-7 2-2h5l-4 4 1 5-4-3-4 3 1-5-4-4h5Z',                  // mullet
   'M0-6a6 6 0 1 0 4 11 7 7 0 1 1-4-11Z',                     // crescent
   'M-6-6h12v3h-4v9h-4v-9h-4Z',                               // label
   'M0-6a6 6 0 1 1 0 12 6 6 0 1 1 0-12Zm0 3a3 3 0 1 0 0 6 3 3 0 1 0 0-6Z', // annulet
@@ -68,9 +75,13 @@ const CADENCY = frozenTable(1, 12, [
   'M-5-5h10v10h-10Z',                                        // billet
   'M0-6 6 0 0 6-6 0Z',                                       // lozenge
   'M-6-2h12v4h-12Z M-2-6h4v12h-4Z',                          // cross
-  'M0-6c3 3 3 6 0 6-3 0-3-3 0-6Z M-6 0c3-3 6-3 6 0 0 3-3 3-6 0Z', // fleur (part)
+  'M0-6c3 3 3 6 0 6-3 0-3-3 0-6Z M-6 0c3-3 6-3 6 0 0 3-3 3-6 0Z', // fleur
   'M0-6a3 3 0 1 1 0 6 3 3 0 1 1 0-6Z M0 0a3 3 0 1 1 0 6 3 3 0 1 1 0-6Z', // two roundels
   'M-6 4 0-6 6 4Z',                                          // pile
+  'M0-6a6 6 0 1 1 0 12 6 6 0 1 1 0-12Z',                     // roundel
+  'M-6-6h12v12h-12Zm3 3h6v6h-6Z',                            // voided square
+  'M0-7 4-1h-8Z M0 7 4 1h-8Z',                               // two piles
+  'M-6-6 6 6M6-6-6 6',                                       // saltire couped
 ] as const);
 
 const CHARGES: FrozenTable<{ id: string; author: string; name: string; d: string }> =
@@ -100,10 +111,20 @@ export function composeSigil(login: string, campaign: number, size = 44): Sigil 
     `<svg viewBox="0 0 100 116" width="${size}" height="${Math.round(size * 1.16)}">` +
     `<defs><clipPath id="${clip}"><path d="${shield}"/></clipPath></defs>` +
     `<path d="${shield}" fill="${field}"/>` +
-    (ordinary ? `<path d="${ordinary}" fill="${ink}" opacity=".35" clip-path="url(#${clip})"/>` : '') +
-    // charge: 512-space icon scaled into the shield's centre
-    `<g clip-path="url(#${clip})" transform="translate(20 26) scale(0.117)">` +
-    `<path d="${charge.d}" fill="${ink}"/></g>` +
+    // The ordinary is drawn in the same tincture as the charge, so at full
+    // strength a charge sitting on the band disappears into it. Keep the band
+    // faint: it is a field division, not a second charge.
+    (ordinary ? `<path d="${ordinary}" fill="${ink}" opacity=".22" clip-path="url(#${clip})"/>` : '') +
+    // Charge: a 512-space icon scaled into the shield's centre.
+    //
+    // The clip and the transform MUST live on separate groups. An element's
+    // own `transform` also transforms its `clip-path`, so putting both on one
+    // <g> scaled the shield-shaped clip region down by the same 0.117 and
+    // clipped the charge away to a sliver. At 40px that read as "a bit plain";
+    // at 54px it was obviously missing.
+    `<g clip-path="url(#${clip})">` +
+    `<g transform="translate(20 26) scale(0.117)">` +
+    `<path d="${charge.d}" fill="${ink}"/></g></g>` +
     (cadency ? `<g transform="translate(78 22)" fill="${ink}"><path d="${cadency}"/></g>` : '') +
     `<path d="${shield}" fill="none" stroke="#FFFFFF" stroke-width="3"/>` +
     `</svg>`;

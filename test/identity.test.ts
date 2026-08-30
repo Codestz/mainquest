@@ -5,6 +5,7 @@ import {
   frozenTable, drawFrom, SIGIL_DIMENSIONS, sigilSpace, expectedCollisions,
   type Source,
 } from '../src/identity.js';
+import { sigilCombinations } from '../src/render/sigil.js';
 
 const policy = seedPolicy();
 
@@ -128,6 +129,13 @@ describe('curation — all good, and still distinct', () => {
 
   it('keeps the sigil space above the distinctness floor', () => {
     expect(sigilSpace()).toBeGreaterThanOrEqual(5_000_000);
+  });
+
+  it('declares only dimensions the composer actually builds', () => {
+    // `chargeTincture` was declared here and never implemented, so the floor
+    // test passed on 3x the distinctness anything rendered. Declared and actual
+    // must agree or the guard guards nothing.
+    expect(sigilCombinations()).toBe(sigilSpace());
   });
 
   it('keeps colliding users under 2% at target scale', () => {
