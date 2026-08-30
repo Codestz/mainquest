@@ -12,7 +12,7 @@
 import en from '../../locales/en.json' with { type: 'json' };
 import { classify, rank, debuffs, type ClassName, type Percentiles } from '../derive.js';
 import { campaignSeed, seal, streamForAxis } from '../identity.js';
-import { PERCENTILES_ARE_PLACEHOLDER } from '../normalise.js';
+import { DISTRIBUTION, MERGES_IS_PROXY, isDegenerate } from '../normalise.js';
 import { composeSigil } from './sigil.js';
 
 const W = 880, H = 420;
@@ -220,9 +220,13 @@ export function renderCard(i: CardInput): Card {
     s += t(660, 360, `${L.ui.sealed_activity}: ${i.restricted}`, 11, ACCENT);
   }
   s += t(790, 394, mark, 10, EDGE);
-  if (PERCENTILES_ARE_PLACEHOLDER) {
-    s += t(660, 378, 'tiers: placeholder distribution', 9, '#E0708A');
-  }
+  // Say what the tiers rest on. A distribution note in small type is cheap;
+  // a card that silently implies rigour it does not have is not.
+  const caveats: string[] = [];
+  if (isDegenerate('reviews')) caveats.push('reviews: sparse in sample');
+  if (MERGES_IS_PROXY) caveats.push('merges: proxied by PRs opened');
+  if (caveats.length) s += t(600, 378, caveats.join(' · '), 9, '#E0708A');
+  s += t(600, 394, `n=${DISTRIBUTION.sampleSize} · ${DISTRIBUTION.generated}`, 9, EDGE);
   s += `</svg>`;
 
   return { svg: s, credit: sig.credit, klass };

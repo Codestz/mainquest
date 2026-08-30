@@ -1,0 +1,62 @@
+{
+  "generated": "2026-08",
+  "campaign": 2026,
+  "sampleSize": 219,
+  "sampledAccounts": 5392,
+  "minActivity": 20,
+  "retainedFraction": 0.0406,
+  "anyActivityFraction": 0.1005,
+  "frame": "uniform over GitHub account ids via /users?since, conditioned on >=20 public contributions in the campaign",
+  "frameNote": "The floor is deliberate. Unconditioned, a uniform account sample is ~92% dormant and would place every real user of this card at p99 on every metric.",
+  "caveat": "Public activity only. `merges` is not sampled here — it needs one search call per user (see docs/02 Tier 1).",
+  "metrics": {
+    "commits": {
+      "p10": 0,
+      "p25": 18,
+      "p50": 32,
+      "p75": 72,
+      "p90": 160,
+      "p99": 656
+    },
+    "reviews": {
+      "p10": 0,
+      "p25": 0,
+      "p50": 0,
+      "p75": 0,
+      "p90": 0,
+      "p99": 12
+    },
+    "streak": {
+      "p10": 2,
+      "p25": 2,
+      "p50": 4,
+      "p75": 6,
+      "p90": 11,
+      "p99": 31
+    },
+    "repos": {
+      "p10": 0,
+      "p25": 1,
+      "p50": 3,
+      "p75": 6,
+      "p90": 11,
+      "p99": 24
+    },
+    "issues": {
+      "p10": 0,
+      "p25": 0,
+      "p50": 0,
+      "p75": 0,
+      "p90": 2,
+      "p99": 18
+    },
+    "prs": {
+      "p10": 0,
+      "p25": 0,
+      "p50": 0,
+      "p75": 2,
+      "p90": 13,
+      "p99": 88
+    }
+  }
+}
