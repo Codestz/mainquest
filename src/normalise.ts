@@ -62,8 +62,30 @@ export function percentileOf(value: number, m: Stops): number {
     .map((p) => [m[`p${p}`], p / 100]);
   const first = pts[0]!;
   const last = pts[pts.length - 1]!;
+
   if (value <= first[0]) return first[0] <= 0 ? 0 : first[1] * (value / first[0]);
-  if (value >= last[0]) return 1;
+
+  /**
+   * Above the last trusted stop, COMPRESS — do not clamp.
+   *
+   * Hard-clamping to 1.0 was worse than the bot-inflated tail it was avoiding.
+   * The sample's p90 for commits is 510, and anyone who installs this card
+   * clears p90 on most metrics — so every active developer's vector went flat
+   * near the top and every archetype scored alike. Measured: a 2,400-commit
+   * committer and a 640-review reviewer, the two most opposite fixtures there
+   * are, both classified `sentinel`.
+   *
+   * This saturates smoothly instead: it equals the last stop's percentile at
+   * the stop, approaches 1.0 asymptotically, and stays strictly monotonic. So
+   * 2,400 commits still outranks 640, while a bot at 17,535 cannot run away
+   * with the scale.
+   */
+  if (value >= last[0]) {
+    const [x, y] = last;
+    if (x <= 0) return 1;
+    return y + (1 - y) * (1 - Math.exp(-(value - x) / x));
+  }
+
   for (let i = 1; i < pts.length; i++) {
     const [x1, y1] = pts[i]!;
     const [x0, y0] = pts[i - 1]!;

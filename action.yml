@@ -30,17 +30,24 @@ inputs:
     required: false
     default: 'animated,still'
   campaign:
-    description: 'Year to render. Defaults to the current calendar year. See docs/07-open-questions.md — rolling vs calendar is UNDECIDED.'
+    description: 'Year to render. Defaults to the current calendar year. The campaign is the calendar year (docs/07#1).'
     required: false
 
 outputs:
   character_class:
-    description: 'Derived class slug (warrior, mage, ...)'
+    description: 'Derived class slug (warrior, hermit, druid, ...)'
   rank:
-    description: 'Derived seniority rank slug'
+    description: 'Derived seniority rank slug (apprentice ... archon)'
   changed:
-    description: 'true if any output file differs from the previous run'
+    description: >-
+      true if any output file differs from the previous run. Rendering is
+      deterministic, so this is false whenever the profile has not moved.
+      Do NOT use it to skip every commit: GitHub disables scheduled workflows
+      after 60 days of repository inactivity, and a profile repo is exactly the
+      kind that goes quiet. Commit at least weekly regardless (docs/06).
 
 runs:
   using: 'node20'
-  main: 'dist/index.js'   # ncc-bundled
+  # Bundled by `npm run build` (ncc). Committed so the Action needs no
+  # node_modules at runtime — that is how GitHub Actions consume JS actions.
+  main: 'dist-action/index.js'

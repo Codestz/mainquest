@@ -1,11 +1,17 @@
 # dependencies
 node_modules/
 
-# build output — every artefact here is reproducible
+# build output — all reproducible
 build/
 dist/
-dist-action/
 coverage/
+
+# dist-action/ is NOT ignored, deliberately.
+#
+# GitHub Actions loads `runs.main` straight from the repository with no install
+# step, so a JS action's bundle must be committed. Ignoring it would make the
+# action fail with "file not found" for every user while working perfectly
+# locally. CI checks it stays in lockstep with src/.
 
 # third-party source, cloned on demand by `npm run icons`
 vendor/

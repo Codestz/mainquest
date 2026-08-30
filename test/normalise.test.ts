@@ -49,25 +49,21 @@ describe('percentileOf', () => {
     expect(percentileOf(100, stops)).toBeCloseTo(0.75, 2);
   });
 
-  it('saturates at the clamp the table declares', () => {
-    // The table declares tailClampedAt: p90 because at n=82 the top stop is a
-    // handful of bot-like accounts (commits p99 = 17,535 vs p90 = 489).
-    // Clamping there keeps the scale spread across real users.
-    expect(percentileOf(200, stops)).toBe(1);
-    expect(percentileOf(900, stops)).toBe(1);
-  });
-
-  it('interpolates between them', () => {
-    const mid = percentileOf(75, stops);
-    expect(mid).toBeGreaterThan(0.5);
-    expect(mid).toBeLessThan(0.75);
-  });
-
-  it('clamps both tails', () => {
-    // The tails are where a sampled table lies most; nothing on the card
-    // should depend on their shape.
-    expect(percentileOf(0, stops)).toBe(0);
-    expect(percentileOf(50_000, stops)).toBe(1);
+  it('compresses above the last stop rather than clamping', () => {
+    // It used to return exactly 1 for anything past the last stop. That
+    // flattened every active user's vector — the sample's p90 for commits is
+    // 510, and anyone who installs this card clears p90 on most metrics — so
+    // the two most opposite fixtures both classified `sentinel`.
+    //
+    // Now it saturates smoothly: equal to the stop's percentile AT the stop,
+    // strictly increasing above it, asymptotic to 1.
+    const at = percentileOf(900, stops);
+    const above = percentileOf(3000, stops);
+    const wayAbove = percentileOf(50_000, stops);
+    expect(at).toBeCloseTo(0.99, 2);
+    expect(above).toBeGreaterThan(at);
+    expect(wayAbove).toBeGreaterThan(above);
+    expect(wayAbove).toBeLessThanOrEqual(1);
   });
 
   it('never leaves 0..1', () => {

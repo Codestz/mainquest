@@ -8,7 +8,7 @@
   "anyActivityFraction": 0.555,
   "frameId": "repos",
   "frame": "uniform over GitHub repository ids via /repositories?since, forks dropped, repos with >=2 contributors kept, then those contributors; conditioned on >=20 public contributions in the campaign",
-  "tailClampedAt": "p90",
+  "tailClampedAt": "p99",
   "frameNote": "Size-biased on purpose: contributing to more repos means more chances to be drawn. This over-represents active developers, which is the population that installs a character sheet \u2014 but it is a bias, and this is not \"the average developer\".",
   "caveat": "Public activity only. `merges` is not sampled here \u2014 it needs one search call per user (see docs/02 Tier 1).",
   "metrics": {
@@ -76,5 +76,6 @@
       "p90": 372,
       "p99": 689
     }
-  }
+  },
+  "tailNote": "Compression, not clamping: percentileOf saturates smoothly above the last stop, so a bot-inflated p99 cannot run away with the scale while real users above p90 stay distinguishable."
 }

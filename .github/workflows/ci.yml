@@ -17,3 +17,31 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+
+  bundle:
+    name: dist-action in lockstep with src
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      # Build into a TEMP directory and diff against the committed bundle.
+      #
+      # Building in place would overwrite the artefact under audit and destroy
+      # the evidence of what was actually committed — the check would then pass
+      # unconditionally.
+      - name: Rebuild into a temp dir
+        run: npx ncc build src/main.ts -o "$RUNNER_TEMP/bundle" --minify
+
+      - name: Compare with the committed bundle
+        run: |
+          if ! diff -q "$RUNNER_TEMP/bundle/index.js" dist-action/index.js >/dev/null; then
+            echo "::error::dist-action/index.js is stale. Run 'npm run build' and commit the result."
+            diff <(head -c 2000 "$RUNNER_TEMP/bundle/index.js") <(head -c 2000 dist-action/index.js) || true
+            exit 1
+          fi
+          echo "bundle is in lockstep with src/"
