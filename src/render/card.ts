@@ -218,7 +218,14 @@ export function renderCard(i: CardInput): Card {
       // Highlight and cursor share ONE <animate> on a wrapping <g>. They were
       // two elements running the identical keyframes on the identical clock:
       // four rows spent eight of the forty-element budget saying one thing.
-      s += `<g opacity="0"><animate attributeName="opacity" values="1;0;0;0" dur="12s" begin="${n * 3}s" repeatCount="indefinite" calcMode="discrete"/>` +
+      // The FIRST group renders at opacity 1, not 0.
+      //
+      // Its keyframes put it at 1 at t=0, so where SMIL runs this changes
+      // nothing. Where SMIL does not run — a static thumbnail, a renderer that
+      // drops animation — every group stayed at 0 and the description window
+      // came out an empty box with the card's whole explanation missing.
+      // Degrading to "the first ability, held" beats degrading to nothing.
+      s += `<g opacity="${n === 0 ? 1 : 0}"><animate attributeName="opacity" values="1;0;0;0" dur="12s" begin="${n * 3}s" repeatCount="indefinite" calcMode="discrete"/>` +
         `<rect x="566" y="${y - 14}" width="292" height="23" fill="${th.row}"/>` +
         // A pointing glyph rather than a ">" — the cursor is chrome, not text.
         `<polygon points="574,${y - 5} 582,${y - 1} 574,${y + 3}" fill="${th.accent}"/></g>`;
@@ -242,7 +249,7 @@ export function renderCard(i: CardInput): Card {
   if (motion.animate) {
     top4.forEach(({ metric: m }, n) => {
       const key = ABILITY_OF[m]!;
-      s += `<g opacity="0"><animate attributeName="opacity" values="1;0;0;0" dur="12s" begin="${n * 3}s" repeatCount="indefinite" calcMode="discrete"/>` +
+      s += `<g opacity="${n === 0 ? 1 : 0}"><animate attributeName="opacity" values="1;0;0;0" dur="12s" begin="${n * 3}s" repeatCount="indefinite" calcMode="discrete"/>` +
         t(30, 360, L.abilities[key].effect, 12) +
         t(30, 378, `${L.ui.measures_prefix} ${L.abilities[key].measures}`, 11, th.edge) +
         t(30, 394, `${fill(L.ui.casts_this_campaign, { n: i.raw[m] ?? 0 })} · ${fill(L.ui.tier, { n: tier(m) })}`, 11, th.dim) +

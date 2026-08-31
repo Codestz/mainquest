@@ -6,6 +6,28 @@
 
 ---
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/sample-card-dark.svg"/>
+  <source media="(prefers-color-scheme: light)" srcset="./assets/sample-card-light.svg"/>
+  <img width="880" src="./assets/sample-card-dark.svg" alt="A MainQuest status card: a pixel-art berserker standing on a year of contributions, with a heraldic sigil, four abilities and a debuff"/>
+</picture>
+
+<details>
+<summary>The companion card — all eight abilities, no scene</summary>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/sample-abilities-dark.svg"/>
+  <source media="(prefers-color-scheme: light)" srcset="./assets/sample-abilities-light.svg"/>
+  <img width="880" src="./assets/sample-abilities-dark.svg" alt="The MainQuest ability card: all eight abilities with their measures, counts, tiers and percentiles"/>
+</picture>
+
+</details>
+
+<sub>A sample, rendered from the `heavy-committer` test fixture — synthetic data,
+not a real account. Regenerate with `npm run samples`.</sub>
+
+---
+
 ## What it is
 
 A GitHub Action that reads your public contribution data, derives an RPG

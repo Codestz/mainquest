@@ -24,7 +24,7 @@
   "homepage": "https://github.com/Codestz/mainquest#readme",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "build": "ncc build src/main.ts -o dist-action --minify",
@@ -38,7 +38,8 @@
     "preview": "tsx scripts/preview.ts",
     "sample:merges": "tsx scripts/sample-merges.ts",
     "card": "tsx scripts/card.ts",
-    "prepublishOnly": "npm run check && npm run build"
+    "prepublishOnly": "npm run check && npm run build",
+    "samples": "tsx scripts/samples.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

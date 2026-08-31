@@ -12,6 +12,7 @@ import { appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { GitHubClient } from './github/client.js';
 import { fetchProfile, ProfileNotFound } from './github/profile.js';
+import { fixtureProfile } from './fixtures.js';
 import { normalise } from './normalise.js';
 import { isLang, LANGS } from './i18n/locales.js';
 import { renderAll } from './render/outputs.js';
@@ -40,19 +41,62 @@ const setOutput = (name: string, value: string): void => {
 };
 
 async function main(): Promise<void> {
-  const token = input('github_token');
-  if (!token) fail('github_token is required. Use a PAT with read:user — GITHUB_TOKEN is not sufficient for restrictedContributionsCount.');
+  /**
+   * Render a built-in fixture instead of a real profile.
+   *
+   * Deliberately an environment variable and not an Action input: it is a test
+   * seam, not a feature, and putting it in `action.yml` would advertise it as
+   * one. CI sets it so it can run this exact bundle end to end — reading real
+   * INPUT_* variables, writing real files — with no secret and no network.
+   */
+  const fixture = process.env['MAINQUEST_FIXTURE']?.trim();
 
-  const username = input('username', process.env['GITHUB_REPOSITORY_OWNER'] ?? '');
+  const token = input('github_token');
+  if (!fixture && !token) {
+    fail(
+      'github_token is required. Use a fine-grained PAT with NO repository ' +
+      'access and NO account permissions — contribution counts are an ' +
+      'attribute of the authenticated identity, so there is no permission to ' +
+      'grant. GITHUB_TOKEN will not work: it does not return ' +
+      'restrictedContributionsCount, so private work vanishes from the card.',
+    );
+  }
+
+  // A fixture carries its own login, so `username` is not merely optional in
+  // fixture mode — it is ignored.
+  const username = input('username', fixture ?? process.env['GITHUB_REPOSITORY_OWNER'] ?? '');
   if (!username) fail('username is required and could not be inferred.');
 
   const outDir = input('outputs', 'dist');
   const campaign = Number(input('campaign', String(new Date().getUTCFullYear())));
   if (!Number.isInteger(campaign)) fail(`campaign must be a year, got "${input('campaign')}"`);
 
-  const wantThemes = new Set(input('themes', 'dark,light').split(',').map((s) => s.trim()));
-  const wantMotion = new Set(input('motion', 'animated,still').split(',').map((s) => s.trim()));
-  const wantCards = new Set(input('cards', 'status,abilities').split(',').map((s) => s.trim()));
+  /**
+   * Warn on a value that matches nothing.
+   *
+   * An input that selects NOTHING already fails loudly below. A PARTIAL typo
+   * did not: `cards: status,abilties` rendered the status card, skipped the
+   * ability card, and exited 0. That is the same failure as `lang` being wired
+   * to nothing — the run is green and the output is quietly wrong — so it gets
+   * the same treatment `lang` gets, a warning rather than silence.
+   *
+   * A warning and not a hard failure: this is a scheduled job committing to
+   * someone's profile, and halting over a typo replaces a working card with a
+   * red X.
+   */
+  const selection = (name: string, fallback: string, valid: readonly string[]): Set<string> => {
+    const raw = input(name, fallback).split(',').map((s) => s.trim()).filter(Boolean);
+    for (const v of raw) {
+      if (!valid.includes(v)) {
+        console.log(`::warning::${name}="${v}" is not one of ${valid.join(', ')}; ignoring it.`);
+      }
+    }
+    return new Set(raw);
+  };
+
+  const wantThemes = selection('themes', 'dark,light', ['dark', 'light']);
+  const wantMotion = selection('motion', 'animated,still', ['animated', 'still']);
+  const wantCards = selection('cards', 'status,abilities', ['status', 'abilities']);
   /**
    * An unrecognised `lang` renders English rather than failing the run.
    *
@@ -66,14 +110,22 @@ async function main(): Promise<void> {
     console.log(`::warning::lang="${langInput}" is not one of ${LANGS.join(', ')}; rendering English.`);
   }
 
-  const client = new GitHubClient({ token, userAgent: 'mainquest-action' });
-
   let profile;
-  try {
-    profile = await fetchProfile(client, username, campaign);
-  } catch (err) {
-    if (err instanceof ProfileNotFound) return fail(err.message);
-    throw err;
+  if (fixture) {
+    process.stdout.write(`::notice::MAINQUEST_FIXTURE=${fixture} — rendering a fixture, not a real profile.\n`);
+    try {
+      profile = fixtureProfile(fixture, campaign);
+    } catch (err) {
+      return fail(err instanceof Error ? err.message : String(err));
+    }
+  } else {
+    const client = new GitHubClient({ token, userAgent: 'mainquest-action' });
+    try {
+      profile = await fetchProfile(client, username, campaign);
+    } catch (err) {
+      if (err instanceof ProfileNotFound) return fail(err.message);
+      throw err;
+    }
   }
 
   // --- campaign state: read, resolve, write back -----------------------------
