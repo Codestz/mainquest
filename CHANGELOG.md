@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.4.0
+
+### Changed
+
+**The cards no longer rank you against other people.** `pNN` is gone from the
+ability sheet and the `n=165 · 2026-08` denominator is gone from both cards.
+
+The table behind them was doing two jobs. The one it must do — mapping eight
+metrics with incompatible units onto a single range so they can be compared to
+an archetype vector — stays, renamed `DISTRIBUTION` to `SCALE`, because that is
+what it is. The one it should never have done was claiming a position among
+other developers.
+
+A bigger sample would not have fixed that. There is no neutral population to
+rank against: uniform over all GitHub accounts is overwhelmingly dormant, so
+the frame has to condition on activity, and every such condition is a choice.
+Sampling harder measures an arbitrary frame more precisely, and precision reads
+as authority. It also contradicted the premise — a card that says it describes
+*how* you work has no business printing a *how much* ranking.
+
+Nothing about the class, sprite, horizon, terrain, tiers or debuffs changes.
+None of them ever needed the population, only the scale.
+
+`merges` remains a proxy and still says so.
+
 ## 1.3.0
 
 ### Added
