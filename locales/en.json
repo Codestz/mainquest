@@ -126,6 +126,21 @@
     "sealed_activity": "sealed activity",
     "campaign": "campaign {year}",
     "relic": "relic",
-    "mother_tongue": "mother tongue"
+    "mother_tongue": "mother tongue",
+    "day": "day",
+    "standing_sealed": "Sealed",
+    "standing_unclassed": "Unclassed",
+    "sealed_epithet": "the work is behind a door",
+    "sealed_note": "rhythm known, role not",
+    "unclassed_note": "the campaign has not begun",
+    "true_class": "True {class}",
+    "hybrid": "Hybrid · also {class}",
+    "path_of": "Path of the {class}",
+    "debuff": "debuff",
+    "debuffs": "debuffs",
+    "no_debuffs": "no debuffs",
+    "percentile_note": "p = percentile against n={n} sampled accounts",
+    "caveat_reviews": "reviews: sparse in sample",
+    "caveat_merges": "merges: proxied by PRs opened"
   }
 }

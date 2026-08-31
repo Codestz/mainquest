@@ -10,7 +10,7 @@
  * This file makes no rendering decisions and imports no theme.
  */
 
-import en from '../../locales/en.json' with { type: 'json' };
+import type { Locale } from '../i18n/locales.js';
 import {
   classify, classMargin, debuffs, rank, standing,
   type ClassName, type Metric, type Standing,
@@ -21,7 +21,7 @@ import { FAMILIARS } from './scene/sprite.js';
 import type { CardInput } from './card.js';
 
 /** The ability each metric surfaces as. */
-export const ABILITY_OF: Record<Metric, keyof typeof en.abilities> = {
+export const ABILITY_OF: Record<Metric, keyof Locale['abilities']> = {
   commits: 'sustained_strike', reviews: 'second_opinion', merges: 'close_the_loop',
   streak: 'endurance', repos: 'open_fronts', issues: 'tracking',
   burst: 'burstfire', weekend: 'sabbath',
@@ -66,7 +66,7 @@ const READOUT: Partial<Record<Metric, (raw: number) => string>> = {
 export interface AbilityRow {
   metric: Metric;
   /** Key into `locales/*.json` -> abilities. */
-  key: keyof typeof en.abilities;
+  key: keyof Locale['abilities'];
   /** Percentile in the sample, 0..1. */
   p: number;
   tier: Tier;

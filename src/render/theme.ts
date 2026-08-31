@@ -138,9 +138,17 @@ export const TYPE = {
 export const header = (x: number, y: number, s: string, fill: string): string =>
   text(x, y, s.toUpperCase(), TYPE.header, fill, { track: 2 });
 
-/** Title Case for proper nouns: class names, ranks. */
+/**
+ * Title Case for proper nouns: class names, ranks.
+ *
+ * `\b[a-z]` was wrong the moment a locale had an accent in it. JavaScript's
+ * `\b` is ASCII-only, so `ñ` and `á` count as NON-word characters and create
+ * a boundary: "ermitaño" came out "ErmitañO" and "solitário" came out
+ * "SolitáRio". Anchoring on whitespace with a Unicode letter class instead
+ * capitalises exactly the first letter of each word, in any script.
+ */
 export const title = (s: string): string =>
-  s.replace(/\b[a-z]/g, (c) => c.toUpperCase());
+  s.replace(/(^|\s)(\p{L})/gu, (_, lead: string, ch: string) => lead + ch.toUpperCase());
 
 /**
  * Classic JRPG menu chrome.

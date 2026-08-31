@@ -13,7 +13,7 @@
  * can all change underneath it.
  */
 
-import en from '../../locales/en.json' with { type: 'json' };
+import { fill, localeFor, type Lang } from '../i18n/locales.js';
 import type { Percentiles } from '../derive.js';
 import { DISTRIBUTION, MERGES_IS_PROXY, isDegenerate } from '../normalise.js';
 import { ABILITY_OF, COUNTED, characterSheet } from './sheet.js';
@@ -45,6 +45,8 @@ export interface CardInput {
   calendarTotal: number;
   /** Viewer preference, not a per-user axis. Defaults to dark. */
   theme?: Theme['name'];
+  /** en | es | pt-BR. Unknown values fall back to English rather than throw. */
+  lang?: Lang;
   /**
    * Still cards list every ability at once, because there is no cursor to
    * cycle them (docs/04). Motion is a rendering mode, not a post-process.
@@ -57,7 +59,7 @@ export interface CardInput {
 export interface Card { svg: string; credit: { id: string; author: string }; klass: import('../derive.js').ClassName }
 
 export function renderCard(i: CardInput): Card {
-  const L = en;
+  const L = localeFor(i.lang);
   const th = THEMES[i.theme ?? 'dark'] ?? DARK;
   const motion = i.motion ?? MOVING;
   const t = (
@@ -165,17 +167,19 @@ export function renderCard(i: CardInput): Card {
       TYPE.identity, th.accent);
     s += t(84, 78, L.classes[klass].epithet, TYPE.detail, th.edge, { opacity: 0.85 });
     s += t(84, 92, margin > 0.12
-      ? `True ${title(L.classes[klass].name)}`
+      ? fill(L.ui.true_class, { class: title(L.classes[klass].name) })
       : margin < 0.03
-        ? `Hybrid · also ${title(L.classes[sub].name)}`
-        : `Path of the ${title(L.classes[sub].name)}`, TYPE.detail, th.edge, { opacity: 0.7 });
+        ? fill(L.ui.hybrid, { class: title(L.classes[sub].name) })
+        : fill(L.ui.path_of, { class: title(L.classes[sub].name) }),
+      TYPE.detail, th.edge, { opacity: 0.7 });
   } else if (state === 'sealed') {
-    s += t(84, 62, `Sealed · ${title(L.ranks[rk as keyof typeof L.ranks])}`, TYPE.identity, th.accent);
-    s += t(84, 78, 'the work is behind a door', TYPE.detail, th.edge, { opacity: 0.85 });
-    s += t(84, 92, 'rhythm known, role not', TYPE.detail, th.edge, { opacity: 0.7 });
+    s += t(84, 62, `${L.ui.standing_sealed} · ${title(L.ranks[rk as keyof typeof L.ranks])}`,
+      TYPE.identity, th.accent);
+    s += t(84, 78, L.ui.sealed_epithet, TYPE.detail, th.edge, { opacity: 0.85 });
+    s += t(84, 92, L.ui.sealed_note, TYPE.detail, th.edge, { opacity: 0.7 });
   } else {
-    s += t(84, 62, 'Unclassed', TYPE.identity, th.accent);
-    s += t(84, 78, 'the campaign has not begun', TYPE.detail, th.edge, { opacity: 0.85 });
+    s += t(84, 62, L.ui.standing_unclassed, TYPE.identity, th.accent);
+    s += t(84, 78, L.ui.unclassed_note, TYPE.detail, th.edge, { opacity: 0.85 });
   }
 
   /**
@@ -202,7 +206,7 @@ export function renderCard(i: CardInput): Card {
 
   // Inside the window. It sat below it before, floating on the sky, which read
   // as a caption that had slipped out of its box.
-  s += t(26, 138, `${L.ui.campaign.replace('{year}', String(i.campaign))} · day ${i.campaignDay}`,
+  s += t(26, 138, `${fill(L.ui.campaign, { year: i.campaign })} · ${L.ui.day} ${i.campaignDay}`,
     TYPE.fine, th.dim, { opacity: 0.8 });
 
   // --- ability window ---
@@ -228,7 +232,7 @@ export function renderCard(i: CardInput): Card {
   });
   if (debs.length) {
     const d = debs[0]! as keyof typeof L.debuffs;
-    s += t(576, 186, `${title(L.debuffs[d].name)} · debuff`, TYPE.detail, th.warn);
+    s += t(576, 186, `${title(L.debuffs[d].name)} · ${L.ui.debuff}`, TYPE.detail, th.warn);
   }
 
   // --- description window ---
@@ -241,7 +245,7 @@ export function renderCard(i: CardInput): Card {
       s += `<g opacity="0"><animate attributeName="opacity" values="1;0;0;0" dur="12s" begin="${n * 3}s" repeatCount="indefinite" calcMode="discrete"/>` +
         t(30, 360, L.abilities[key].effect, 12) +
         t(30, 378, `${L.ui.measures_prefix} ${L.abilities[key].measures}`, 11, th.edge) +
-        t(30, 394, `${L.ui.casts_this_campaign.replace('{n}', String(i.raw[m] ?? 0))} · ${L.ui.tier.replace('{n}', String(tier(m)))}`, 11, th.dim) +
+        t(30, 394, `${fill(L.ui.casts_this_campaign, { n: i.raw[m] ?? 0 })} · ${fill(L.ui.tier, { n: tier(m) })}`, 11, th.dim) +
         `</g>`;
     });
   } else {
@@ -262,28 +266,49 @@ export function renderCard(i: CardInput): Card {
       const row = 340 + Math.floor(n / 2) * 28;
       s += t(col, row, L.abilities[key].name, 11, th.ink);
       s += t(col, row + 12, `${L.ui.measures_prefix} ${L.abilities[key].measures}`, 9, th.edge);
-      s += t(col + 300, row, `${i.raw[m] ?? 0} · ${L.ui.tier.replace('{n}', String(tier(m)))}`, 9, th.dim);
+      s += t(col + 300, row, `${i.raw[m] ?? 0} · ${fill(L.ui.tier, { n: tier(m) })}`, 9, th.dim);
     });
   }
-  if (i.restricted > 0) {
-    s += motion.animate
-      ? t(672, 358, `${L.ui.sealed_activity}: ${i.restricted}`, 11, th.accent)
-      : t(30, 398, `${L.ui.sealed_activity}: ${i.restricted}`, 9, th.accent);
+  if (!motion.animate && i.restricted > 0) {
+    s += t(30, 398, `${L.ui.sealed_activity}: ${i.restricted}`, 9, th.accent);
   }
-  s += t(790, 396, mark, 10, th.edge);
   // Say what the tiers rest on. A distribution note in small type is cheap;
   // a card that silently implies rigour it does not have is not.
   const caveats: string[] = [];
-  if (isDegenerate('reviews')) caveats.push('reviews: sparse in sample');
-  if (MERGES_IS_PROXY) caveats.push('merges: proxied by PRs opened');
-  if (caveats.length) {
-    s += motion.animate
-      ? t(672, 372, caveats.join(' · '), 9, th.warn)
-      : t(200, 398, caveats.join(' · '), 9, th.warn);
+  if (isDegenerate('reviews')) caveats.push(L.ui.caveat_reviews);
+  if (MERGES_IS_PROXY) caveats.push(L.ui.caveat_merges);
+
+  /**
+   * The whole bottom-right column is ONE right-anchored stack.
+   *
+   * It used to be four independent absolute placements — sealed activity at
+   * (672,358), the caveats joined onto one line at (672,372), the sample note
+   * at (672,384) and the seal at (790,396) — each sized for English and for
+   * the assumption that only one caveat ever fires. Two caveats ran 100px off
+   * an 880px canvas, and Spanish put the sample note straight through the
+   * seal.
+   *
+   * Stacking upward from a fixed baseline means any number of lines in any
+   * language lands in the same column and cannot collide.
+   */
+  if (motion.animate) {
+    const lines: Array<[string, string, number]> = [];
+    if (i.restricted > 0) {
+      lines.push([`${L.ui.sealed_activity}: ${i.restricted}`, th.accent, 11]);
+    }
+    for (const c of caveats) lines.push([c, th.warn, 9]);
+    lines.push([`n=${DISTRIBUTION.sampleSize} · ${DISTRIBUTION.generated}`, th.edge, 9]);
+    lines.push([mark, th.edge, 10]);
+
+    const bottom = 396;
+    lines.forEach(([line, col, size], k) => {
+      s += t(858, bottom - (lines.length - 1 - k) * 12, line, size, col, { anchor: 'end' });
+    });
+  } else {
+    if (caveats.length) s += t(200, 398, caveats.join(' · '), 9, th.warn);
+    s += t(640, 398, `n=${DISTRIBUTION.sampleSize} · ${DISTRIBUTION.generated}`, 9, th.edge);
+    s += t(858, 398, mark, 9, th.edge, { anchor: 'end' });
   }
-  s += motion.animate
-    ? t(672, 384, `n=${DISTRIBUTION.sampleSize} · ${DISTRIBUTION.generated}`, 9, th.edge)
-    : t(600, 398, `n=${DISTRIBUTION.sampleSize} · ${DISTRIBUTION.generated}`, 9, th.edge);
   s += `</svg>`;
 
   return { svg: s, credit: sig.credit, klass };

@@ -23,11 +23,10 @@ inputs:
     default: ${{ github.repository_owner }}
   lang:
     description: >-
-      RESERVED — not yet wired. The renderer currently emits English only.
-      The es and pt-BR locale files ship complete and are validated against
-      every text slot by the layout tests, but nothing loads them yet. Setting
-      this has no effect today; it is kept so that workflows written now do
-      not need editing when it lands.
+      en | es | pt-BR. An unrecognised value renders English and logs a
+      warning rather than failing the run — this is a scheduled job whose
+      output is committed to a profile, and halting over a typo would replace
+      a working card with a red X.
     required: false
     default: 'en'
   outputs:

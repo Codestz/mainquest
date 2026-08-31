@@ -126,6 +126,21 @@
     "sealed_activity": "atividade selada",
     "campaign": "campanha {year}",
     "relic": "relíquia",
-    "mother_tongue": "língua materna"
+    "mother_tongue": "língua materna",
+    "day": "dia",
+    "standing_sealed": "Selado",
+    "standing_unclassed": "Sem classe",
+    "sealed_epithet": "o trabalho está atrás de uma porta",
+    "sealed_note": "ritmo conhecido, papel não",
+    "unclassed_note": "a campanha ainda não começou",
+    "true_class": "{class} de raiz",
+    "hybrid": "Híbrido · também {class}",
+    "path_of": "Na senda de {class}",
+    "debuff": "penalidade",
+    "debuffs": "penalidades",
+    "no_debuffs": "sem penalidades",
+    "percentile_note": "p = percentil sobre n={n} contas amostradas",
+    "caveat_reviews": "reviews: escassos na amostra",
+    "caveat_merges": "merges: estimado por PRs abertos"
   }
 }

@@ -13,7 +13,7 @@
  * already on screen, which is the entire point of the card.
  */
 
-import en from '../../locales/en.json' with { type: 'json' };
+import { fill, localeFor, type Locale } from '../i18n/locales.js';
 import { DISTRIBUTION } from '../normalise.js';
 import type { Card, CardInput } from './card.js';
 import { characterSheet } from './sheet.js';
@@ -34,7 +34,7 @@ const RIGHT = 844;
 const HEAD_TEXT = 744;
 
 export function renderAbilities(i: CardInput): Card {
-  const L = en;
+  const L = localeFor(i.lang);
   const th: Theme = THEMES[i.theme ?? 'dark'] ?? DARK;
   const sh = characterSheet(i);
   const t = (
@@ -71,7 +71,7 @@ export function renderAbilities(i: CardInput): Card {
   // and a companion nobody can identify is worse than no companion.
   if (sh.classified) s += sprite(790, 76, sh.klass, sh.familiar, 1.4, th, { animate: false });
 
-  s += t(HEAD_TEXT, 40, `${L.ui.campaign.replace('{year}', String(i.campaign))} · day ${i.campaignDay}`,
+  s += t(HEAD_TEXT, 40, `${fill(L.ui.campaign, { year: i.campaign })} · ${L.ui.day} ${i.campaignDay}`,
     TYPE.fine, th.dim, { anchor: 'end', opacity: 0.85 });
   s += t(HEAD_TEXT, 56, sh.seal, TYPE.fine, th.edge, { anchor: 'end' });
 
@@ -129,18 +129,22 @@ export function renderAbilities(i: CardInput): Card {
   // --- footer ---------------------------------------------------------------
   s += menu(th, 16, 560, 848, 44);
   if (sh.debuffs.length) {
-    s += header(30, 584, 'debuffs', th.warn);
-    s += t(120, 584, sh.debuffs
+    s += header(30, 584, L.ui.debuffs, th.warn);
+    // Measured, not guessed. The list sat at a hardcoded x=120, which English
+    // "debuffs" clears and Spanish "penalizaciones" — 14 tracked characters,
+    // 120px — runs straight through.
+    const dx = 30 + Math.ceil(L.ui.debuffs.length * (TYPE.header * 0.6 + 2)) + 18;
+    s += t(dx, 584, sh.debuffs
       .map((d) => title(L.debuffs[d as keyof typeof L.debuffs].name)).join(' · '),
       11, th.warn);
   } else {
-    s += t(30, 584, 'no debuffs', 11, th.edge, { opacity: 0.8 });
+    s += t(30, 584, L.ui.no_debuffs, 11, th.edge, { opacity: 0.8 });
   }
   // What the bars are measured against. The card shows a percentile on every
   // row, so it owes the reader the denominator.
-  s += t(RIGHT, 578, `p = percentile against n=${DISTRIBUTION.sampleSize} sampled accounts`,
+  s += t(RIGHT, 578, fill(L.ui.percentile_note, { n: DISTRIBUTION.sampleSize }),
     9, th.edge, { anchor: 'end' });
-  s += t(RIGHT, 592, `${DISTRIBUTION.generated} · campaign ${i.campaign}`,
+  s += t(RIGHT, 592, `${DISTRIBUTION.generated} · ${fill(L.ui.campaign, { year: i.campaign })}`,
     9, th.edge, { anchor: 'end', opacity: 0.7 });
 
   s += `</svg>`;
@@ -148,9 +152,9 @@ export function renderAbilities(i: CardInput): Card {
 }
 
 /** The identity line, saying only what the standing entitles it to say. */
-function identity(sh: ReturnType<typeof characterSheet>, L: typeof en): string {
+function identity(sh: ReturnType<typeof characterSheet>, L: Locale): string {
   const rk = title(L.ranks[sh.rank as keyof typeof L.ranks]);
   if (sh.classified) return `${title(L.classes[sh.klass].name)} · ${rk}`;
-  if (sh.state === 'sealed') return `Sealed · ${rk}`;
-  return 'Unclassed';
+  if (sh.state === 'sealed') return `${L.ui.standing_sealed} · ${rk}`;
+  return L.ui.standing_unclassed;
 }

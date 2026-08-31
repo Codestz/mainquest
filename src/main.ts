@@ -13,6 +13,7 @@ import { join } from 'node:path';
 import { GitHubClient } from './github/client.js';
 import { fetchProfile, ProfileNotFound } from './github/profile.js';
 import { normalise } from './normalise.js';
+import { isLang, LANGS } from './i18n/locales.js';
 import { renderAll } from './render/outputs.js';
 import {
   parseState, resolveClass, serialiseState, type CampaignState,
@@ -52,6 +53,18 @@ async function main(): Promise<void> {
   const wantThemes = new Set(input('themes', 'dark,light').split(',').map((s) => s.trim()));
   const wantMotion = new Set(input('motion', 'animated,still').split(',').map((s) => s.trim()));
   const wantCards = new Set(input('cards', 'status,abilities').split(',').map((s) => s.trim()));
+  /**
+   * An unrecognised `lang` renders English rather than failing the run.
+   *
+   * This is a scheduled job whose output is committed to someone's profile.
+   * Halting over a typo in a workflow input would replace a working card with
+   * a red X; falling back does not. The warning is how they find out.
+   */
+  const langInput = input('lang', 'en').trim();
+  const lang = isLang(langInput) ? langInput : undefined;
+  if (!lang && langInput) {
+    console.log(`::warning::lang="${langInput}" is not one of ${LANGS.join(', ')}; rendering English.`);
+  }
 
   const client = new GitHubClient({ token, userAgent: 'mainquest-action' });
 
@@ -108,6 +121,7 @@ async function main(): Promise<void> {
     prsOpened: profile.prsOpened,
     campaignDay: profile.campaignDay,
     calendarTotal: profile.calendarTotal,
+    ...(lang ? { lang } : {}),
   });
 
   // `motion` gates the status card only. The ability card has no animated

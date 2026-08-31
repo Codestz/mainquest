@@ -1,5 +1,52 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+**`lang` actually works.** It was an Action input for the whole of v1 —
+documented, defaulted, validated by the layout tests — and wired to nothing:
+every renderer did `import en from locales/en.json` and used it directly.
+
+This was never just plumbing. Fifteen user-visible strings lived as literals in
+the renderers, so swapping the import would have produced a Spanish card with
+English standing lines. They now live in `ui`, in all three locales.
+
+An unrecognised value renders English and logs a warning rather than failing
+the run: a card is a scheduled job whose output is committed to a profile, and
+halting over a typo in a workflow input replaces a working card with a red X.
+
+`npm run card -- --user=<login> --lang=es` renders any locale locally.
+
+### Fixed
+
+Four defects that only a non-English render could expose:
+
+**`title()` broke on every accent.** JavaScript's `\b` is ASCII-only, so `ñ`
+and `á` read as word boundaries: `ermitaño` came out `ErmitañO` and `solitário`
+came out `SolitáRio`. Now anchored on whitespace with a Unicode letter class.
+
+**The status card's bottom-right corner was four independent absolute
+placements**, each sized for English and for the assumption that only one
+caveat ever fires. Two caveats joined onto one line ran 100px off an 880px
+canvas — true in English too, and only invisible because
+`isDegenerate('reviews')` is currently false. Spanish put the sample-size note
+straight through the campaign seal. It is now one right-anchored stack that
+grows upward, so any number of lines in any language lands in the same column.
+
+**The ability card's debuff list started at a hardcoded `x=120`**, which
+English `debuffs` clears and Spanish `penalizaciones` — 14 tracked characters,
+120px — runs straight through. The offset is measured from the label now.
+
+**`locales/es.json` was missing `_meta.note`.** Key parity across all three
+locales is now asserted, along with no empty strings and — the one that would
+have bitten quietly — that every `{placeholder}` survives translation. A locale
+that drops `{n}` renders "rango de 3" and nothing else would have noticed.
+
+### Tests
+
+137 -> 175.
+
 ## 1.1.0
 
 ### Added

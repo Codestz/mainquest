@@ -61,6 +61,7 @@ jobs:
           username: ${{ github.repository_owner }}
           outputs: dist/
           cards: status,abilities
+          lang: en          # en | es | pt-BR
 
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
@@ -185,6 +186,23 @@ not tier 1.
 **Debuffs** — `lone wolf`, `revolving door`, `ivory tower`. The honest half.
 Every good character sheet shows what you are bad at.
 
+## Languages
+
+`lang: en | es | pt-BR`. Not translated — **transcreated**: the flavour text is
+the point, so `sabbath` is `sabbat` in Spanish and the class epithets are
+rewritten rather than rendered word-for-word.
+
+Every string on both cards is localised, including the standing lines
+(`Sellado`, `la campaña aún no empieza`) and the provenance footer. An
+unrecognised value renders English and logs a warning rather than failing the
+run — this is a scheduled job whose output is committed to a profile, and
+halting over a typo would replace a working card with a red X.
+
+SVG has no text wrapping, so a string that overflows its box just runs off the
+edge in silence. `test/i18n.test.ts` measures every localised string against
+the box it lands in, for every locale, and `test/fit.test.ts` does the same for
+the ability prose. Both are build errors, not review comments.
+
 **Sigil** — a heraldic crest generated from your login: shield × tincture ×
 ordinary × charge × cadency mark, 8,847,360 combinations. It is **permanent** —
 derived from your login alone, so it never changes campaign to campaign. Some
@@ -220,9 +238,6 @@ Two things are honest about their limits, on the card and here:
 
 Also known:
 
-- `lang` is accepted and ignored. The renderer emits English only. The `es` and
-  `pt-BR` files are complete and every text slot in both is validated by the
-  layout tests — they are simply not loaded yet.
 - Sprite proportions drift between classes.
 - The status card is ~28 KB against a 25 KB target (40 KB hard limit); the
   ability card is ~18 KB. Both hold under the 40-element animation budget,

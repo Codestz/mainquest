@@ -1,7 +1,8 @@
 {
   "_meta": {
     "lang": "es",
-    "complete": true
+    "complete": true,
+    "note": "Transcreated, not translated: the flavour text is the point."
   },
   "classes": {
     "berserker": {
@@ -125,6 +126,21 @@
     "sealed_activity": "actividad sellada",
     "campaign": "campaña {year}",
     "relic": "reliquia",
-    "mother_tongue": "lengua madre"
+    "mother_tongue": "lengua madre",
+    "day": "día",
+    "standing_sealed": "Sellado",
+    "standing_unclassed": "Sin clase",
+    "sealed_epithet": "el trabajo está tras una puerta",
+    "sealed_note": "ritmo conocido, rol desconocido",
+    "unclassed_note": "la campaña aún no empieza",
+    "true_class": "{class} de pura cepa",
+    "hybrid": "Híbrido · también {class}",
+    "path_of": "En la senda de {class}",
+    "debuff": "penalización",
+    "debuffs": "penalizaciones",
+    "no_debuffs": "sin penalizaciones",
+    "percentile_note": "p = percentil sobre n={n} cuentas muestreadas",
+    "caveat_reviews": "reviews: escasos en la muestra",
+    "caveat_merges": "merges: estimado con PRs abiertos"
   }
 }

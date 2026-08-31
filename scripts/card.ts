@@ -17,6 +17,7 @@ import { promisify } from 'node:util';
 import { GitHubClient } from '../src/github/client.js';
 import { fetchProfile, ProfileNotFound } from '../src/github/profile.js';
 import { normalise } from '../src/normalise.js';
+import { isLang } from '../src/i18n/locales.js';
 import { renderAll } from '../src/render/outputs.js';
 
 const run = promisify(execFile);
@@ -31,6 +32,7 @@ const arg = <T extends string | number>(k: string, d: T): T => {
 const USER = arg('user', '');
 const CAMPAIGN = arg('campaign', new Date().getUTCFullYear());
 const OUT = arg('out', 'build/cards');
+const LANG = String(arg('lang', 'en'));
 
 async function token(): Promise<string> {
   if (process.env['GITHUB_TOKEN']) return process.env['GITHUB_TOKEN'];
@@ -68,6 +70,7 @@ async function main(): Promise<void> {
     prsOpened: profile.prsOpened,
     campaignDay: profile.campaignDay,
     calendarTotal: profile.calendarTotal,
+    ...(isLang(LANG) ? { lang: LANG } : {}),
   });
 
   mkdirSync(OUT, { recursive: true });
