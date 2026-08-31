@@ -232,13 +232,31 @@ Every good character sheet shows what you are bad at.
 
 ### What it doesn't claim
 
-- The percentile distribution is **n=165**, sampled from repository
-  contributors. Enough to be meaningful, small enough that the card prints its
-  own sample size rather than implying more rigour than it has.
-- `merges` is real for a rendered card, but the *scale* it is scored against
-  still uses PRs-opened, because the bulk sampler skips the extra search
-  request. Opened is strictly more than merged, so the proxy flatters
-  everyone — the card says so on every render.
+**It does not rank you against other people.** There is no percentile on either
+card, and that is deliberate rather than unfinished.
+
+The eight metrics have incompatible units — commits reach five figures, streak
+caps at 366, `burst` is a coefficient of variation — so something has to map
+them onto one range before they can be compared to an archetype. That mapping
+is a **scale**, the way a game's stat curve is a scale. It is not a league
+table, and the bars on the ability card are levels, not standings.
+
+An earlier version did print a percentile against a sample of real accounts.
+It was dropped, and a bigger sample would not have rescued it: there is no
+neutral population to rank against. Uniform over all GitHub accounts is
+overwhelmingly dormant — under that frame `reviews` had p50 = p90 = 0, a
+boolean wearing a percentile's clothes — so the frame has to condition on
+activity, and every such condition is a choice. Sampling harder would only
+measure an arbitrary frame more precisely, and precision reads as authority.
+
+It also argued against the card. A thing whose premise is that it describes
+*how* you work has no business printing a *how much* ranking.
+
+**`merges` is still a proxy.** It is scored on a scale calibrated for PRs
+*opened*, because merges has no stops of its own. Opened is strictly more than
+merged, so everyone reads high on it — and `close_the_loop` and the
+`revolving_door` debuff exist precisely to measure that gap. The card says so
+on every render.
 
 ## Languages
 

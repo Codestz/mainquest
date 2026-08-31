@@ -139,7 +139,6 @@
     "debuff": "penalización",
     "debuffs": "penalizaciones",
     "no_debuffs": "sin penalizaciones",
-    "percentile_note": "p = percentil sobre n={n} cuentas muestreadas",
     "caveat_reviews": "reviews: escasos en la muestra",
     "caveat_merges": "merges: estimado con PRs abiertos",
     "caveat_private": "trabajo privado no contado (sin PAT)",

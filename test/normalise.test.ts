@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalise, percentileOf, DISTRIBUTION, IS_PLACEHOLDER, isDegenerate } from '../src/normalise.js';
+import { normalise, percentileOf, SCALE, IS_PLACEHOLDER, isDegenerate } from '../src/normalise.js';
 import { hasSignal, classMargin, standing, type Metric } from '../src/derive.js';
 
 const METRICS: Metric[] = [
@@ -8,14 +8,14 @@ const METRICS: Metric[] = [
 
 describe('the distribution table', () => {
   it('covers every metric derive() consumes', () => {
-    for (const m of METRICS) expect(DISTRIBUTION.metrics[m], m).toBeDefined();
+    for (const m of METRICS) expect(SCALE.metrics[m], m).toBeDefined();
   });
 
   it('is monotonic at every stop', () => {
     // A non-monotonic table silently inverts a tier. Cheap to assert, and the
     // table is regenerated quarterly by a script nobody will re-read.
     for (const m of METRICS) {
-      const s = DISTRIBUTION.metrics[m]!;
+      const s = SCALE.metrics[m]!;
       const vals = [s.p10, s.p25, s.p50, s.p75, s.p90, s.p99];
       for (let i = 1; i < vals.length; i++) {
         expect(vals[i]!, `${m} p-stop ${i}`).toBeGreaterThanOrEqual(vals[i - 1]!);
@@ -27,9 +27,9 @@ describe('the distribution table', () => {
     expect(IS_PLACEHOLDER).toBe(false);
     // Deliberately low: the shipped table is the repo-contributor PILOT
     // (n=82). Frame correctness beat sample size — see the file's `caveat`.
-    expect(DISTRIBUTION.sampleSize).toBeGreaterThan(50);
-    expect(DISTRIBUTION.frame).toBeTruthy();
-    expect(DISTRIBUTION.minActivity).toBeGreaterThan(0);
+    expect(SCALE.sampleSize).toBeGreaterThan(50);
+    expect(SCALE.frame).toBeTruthy();
+    expect(SCALE.minActivity).toBeGreaterThan(0);
   });
 
   it('has a non-degenerate reviews distribution', () => {

@@ -15,7 +15,7 @@
 
 import { fill, localeFor, type Lang } from '../i18n/locales.js';
 import type { Percentiles } from '../derive.js';
-import { DISTRIBUTION, MERGES_IS_PROXY, isDegenerate } from '../normalise.js';
+import { MERGES_IS_PROXY, isDegenerate } from '../normalise.js';
 import { ABILITY_OF, COUNTED, characterSheet } from './sheet.js';
 import {
   DARK, H, MOVING, THEMES, TYPE, W, esc, text, title, window as menu,
@@ -364,7 +364,6 @@ export function renderCard(i: CardInput): Card {
       lines.push([`${L.ui.sealed_activity}: ${i.restricted}`, th.accent, 11]);
     }
     for (const c of caveats) lines.push([c, th.warn, 9]);
-    lines.push([`n=${DISTRIBUTION.sampleSize} · ${DISTRIBUTION.generated}`, th.edge, 9]);
     lines.push([mark, th.edge, 10]);
 
     const bottom = 396;
@@ -373,7 +372,6 @@ export function renderCard(i: CardInput): Card {
     });
   } else {
     if (caveats.length) s += t(200, 398, caveats.join(' · '), 9, th.warn);
-    s += t(640, 398, `n=${DISTRIBUTION.sampleSize} · ${DISTRIBUTION.generated}`, 9, th.edge);
     s += t(858, 398, mark, 9, th.edge, { anchor: 'end' });
   }
   s += `</svg>`;

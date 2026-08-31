@@ -14,7 +14,6 @@
  */
 
 import { fill, localeFor, type Locale } from '../i18n/locales.js';
-import { DISTRIBUTION } from '../normalise.js';
 import type { Card, CardInput } from './card.js';
 import { characterSheet } from './sheet.js';
 import { sprite } from './scene/sprite.js';
@@ -45,7 +44,7 @@ export function renderAbilities(i: CardInput): Card {
   let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${ABILITIES_H}" ` +
     `viewBox="0 0 ${W} ${ABILITIES_H}" role="img">`;
   s += `<title>${esc(i.login)} — ability sheet: all eight abilities with their ` +
-    `measures, counts and percentile in the sample</title>`;
+    `measures, counts and tiers</title>`;
   s += `<desc>The companion to the MainQuest status card. Same derived data, ` +
     `laid out for reading rather than for atmosphere.</desc>`;
   s += `<metadata><![CDATA[Heraldic charge "${esc(sh.sigil.credit.id.split('/')[1] ?? '')}" by ` +
@@ -115,15 +114,6 @@ export function renderAbilities(i: CardInput): Card {
       `<rect x="${GUTTER}" y="${top + 30}" width="${fill}" height="8" fill="${th.accent}"/>` +
       `<rect x="${GUTTER}" y="${top + 30}" width="${bw}" height="8" fill="none" ` +
       `stroke="${th.edge}" stroke-width="1" opacity=".5"/>`;
-    /**
-     * `p88`, not `top 12%`.
-     *
-     * "Top 12%" is the friendlier phrasing right up until the percentile is
-     * low, at which point the card tells someone they are in the "top 95%" of
-     * GitHub accounts — an insult the RPG framing was specifically built to
-     * avoid. A percentile label is neutral at both ends of the scale.
-     */
-    s += t(RIGHT, top + 38, `p${Math.round(a.p * 100)}`, 9, th.dim, { anchor: 'end' });
   });
 
   // --- footer ---------------------------------------------------------------
@@ -140,11 +130,7 @@ export function renderAbilities(i: CardInput): Card {
   } else {
     s += t(30, 584, L.ui.no_debuffs, 11, th.edge, { opacity: 0.8 });
   }
-  // What the bars are measured against. The card shows a percentile on every
-  // row, so it owes the reader the denominator.
-  s += t(RIGHT, 578, fill(L.ui.percentile_note, { n: DISTRIBUTION.sampleSize }),
-    9, th.edge, { anchor: 'end' });
-  s += t(RIGHT, 592, `${DISTRIBUTION.generated} · ${fill(L.ui.campaign, { year: i.campaign })}`,
+  s += t(RIGHT, 592, fill(L.ui.campaign, { year: i.campaign }),
     9, th.edge, { anchor: 'end', opacity: 0.7 });
 
   s += `</svg>`;

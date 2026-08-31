@@ -7,6 +7,7 @@ import { renderAll } from '../src/render/outputs.js';
 import { characterSheet, tierOf } from '../src/render/sheet.js';
 import { STILL, type Theme } from '../src/render/theme.js';
 import { readWeather } from '../src/render/scene/weather.js';
+import { localeFor } from '../src/i18n/locales.js';
 
 /**
  * The two budgets, enforced instead of merely written down.
@@ -141,8 +142,16 @@ describe('the ability card', () => {
       const svg = renderAbilities(input(f)).svg;
       expect(animated(svg)).toBe(0);
       expect(Buffer.byteLength(svg)).toBeLessThanOrEqual(BYTES_MAX);
-      // Eight percentile labels: one per ability, none skipped.
-      expect((svg.match(/>p\d{1,3}</g) ?? []).length).toBe(8);
+      // Eight `measures:` lines — one per ability, none skipped. This used to
+      // count percentile labels; those are gone, and the measures line is the
+      // better probe anyway because it is the one the card cannot do without.
+      const L = localeFor(undefined);
+      expect((svg.match(new RegExp(`>${L.ui.measures_prefix} `, 'g')) ?? []).length).toBe(8);
+
+      // The ranking claim stays gone. `pNN` was a position among 165 sampled
+      // strangers on a card whose premise is that it measures how you work,
+      // not how much — and no sample size could have made that claim sound.
+      expect(svg).not.toMatch(/>p\d{1,3}</);
     });
 
     it(`${f.login}: names the same class as the status card`, () => {

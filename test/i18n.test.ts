@@ -46,7 +46,6 @@ describe('placeholders survive translation', () => {
     ['ui.true_class', ['class']],
     ['ui.hybrid', ['class']],
     ['ui.path_of', ['class']],
-    ['ui.percentile_note', ['n']],
   ];
   for (const lang of LANGS) {
     for (const [path, vars] of WITH_VARS) {
@@ -111,10 +110,10 @@ describe('localised UI strings fit their slots', () => {
       for (const d of Object.values(L.debuffs)) {
         ok(`${d.name} · ${L.ui.debuff}`, 'ability.debuff');
       }
-      ok(fill(L.ui.percentile_note, { n: 165 }), 'sheet.percentile');
       // Each caveat is now its own right-anchored line, never joined.
       ok(L.ui.caveat_reviews, 'card.caveat');
       ok(L.ui.caveat_merges, 'card.caveat');
+      ok(L.ui.caveat_private, 'card.caveat');
       ok(L.ui.no_debuffs, 'sheet.percentile');
     });
   }

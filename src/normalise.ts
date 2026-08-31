@@ -1,6 +1,28 @@
 /**
- * Raw counts -> percentile vector, against the sampled distribution.
- * Pure. The output is what derive() and the renderer both consume.
+ * Raw counts -> a comparable 0..1 vector. Pure. The output is what derive()
+ * and the renderer both consume.
+ *
+ * THIS IS A SCALE, NOT A RANKING, and the difference is the whole reason the
+ * card no longer prints a percentile.
+ *
+ * Eight metrics with incompatible units — commits run to five figures, streak
+ * caps at 366, burst is a coefficient of variation x1000 — cannot be compared
+ * by cosine until something maps them onto one range. That mapping is all this
+ * module owes anybody. The stops that define it happen to have been measured
+ * from a sample, because measured anchors are more sensible than invented
+ * ones, but the number they produce is a POSITION ON A SCALE and must never be
+ * shown to a user as a position among people.
+ *
+ * The claim was dropped rather than improved, because a bigger sample cannot
+ * fix it. There is no neutral population to rank against: uniform over all
+ * accounts is overwhelmingly dormant — under that frame `reviews` had
+ * p50 = p90 = 0, a boolean wearing a percentile's clothes — so the frame has
+ * to condition on activity, and every such condition is a choice. Sampling
+ * harder would only measure an arbitrary frame more precisely, and precision
+ * reads as authority.
+ *
+ * It also contradicted the product: a card whose premise is that it describes
+ * how you work, not how much, has no business printing a how-much ranking.
  */
 
 import table from '../data/percentiles.json' with { type: 'json' };
@@ -18,19 +40,24 @@ export const METRICS: readonly Metric[] = [
 const STOPS = [10, 25, 50, 75, 90, 99] as const;
 
 /**
- * `merges` is not in the sampled table: it needs one `search(is:merged)` call
- * per user (the Tier 1 search) and search is rate-limited separately at 30/min.
- * Until that pass runs, PRs *opened* stands in for PRs *merged*.
+ * `merges` has no stops of its own, so PRs *opened* stands in for PRs
+ * *merged*.
  *
- * This is a real distortion, not a rounding error — `close_the_loop` and the
- * `revolving_door` debuff exist precisely to measure the gap between opened and
- * merged, so a proxy that equates them flatters everyone. The card says so.
+ * Still a real distortion, even now that no ranking is printed: `merges` is
+ * being placed on a scale calibrated for a different and strictly larger
+ * quantity, so everyone reads high on it. `close_the_loop` and the
+ * `revolving_door` debuff exist precisely to measure the gap between opened
+ * and merged. The card says so.
+ *
+ * Now that this table is a scale rather than a sample, the fix no longer
+ * requires a sampling run at all — merges stops can simply be authored, the
+ * same way any game's stat curve is.
  */
 export const MERGES_IS_PROXY = !('merges' in table.metrics);
 
 const metrics = table.metrics as unknown as Record<string, Stops>;
 
-export const DISTRIBUTION = {
+export const SCALE = {
   ...table,
   metrics: {
     ...metrics,
@@ -38,23 +65,23 @@ export const DISTRIBUTION = {
   } as Record<Metric, Stops>,
 };
 
-/** True while the distribution is invented rather than sampled. */
-export const IS_PLACEHOLDER = (DISTRIBUTION as { generated: string }).generated === 'PLACEHOLDER';
+/** True while the stops are invented rather than measured. */
+export const IS_PLACEHOLDER = (SCALE as { generated: string }).generated === 'PLACEHOLDER';
 
 /**
- * Where the table stops being trustworthy. At the current sample size the top
- * stop is driven by a handful of bot-like accounts (commits p99 = 17,535
- * against p90 = 489), so clamping at p99 would spread most real users across
- * almost none of the scale. The table declares its own clamp.
+ * Where the scale stops being useful. The top stop is driven by a handful of
+ * bot-like accounts (commits p99 = 17,535 against p90 = 489), so anchoring the
+ * top of the scale there would squeeze every real user into almost none of it.
+ * The table declares its own clamp.
  */
 const CLAMP_AT = Number(
-  String((DISTRIBUTION as { tailClampedAt?: string }).tailClampedAt ?? 'p99').slice(1),
+  String((SCALE as { tailClampedAt?: string }).tailClampedAt ?? 'p99').slice(1),
 );
 
 /**
- * Piecewise-linear interpolation between the published stops. Below p10 and
- * above the clamp it saturates: the tails are where a sampled table lies most,
- * and nothing on the card should depend on their shape.
+ * Piecewise-linear interpolation between the published stops. Below the first
+ * and above the clamp it saturates: the tails are where the stops are least
+ * meaningful, and nothing on the card should depend on their shape.
  */
 export function percentileOf(value: number, m: Stops): number {
   const pts: Array<[number, number]> = STOPS
@@ -106,7 +133,7 @@ export function normalise(raw: RawMetrics): Percentiles {
   // `login` — was looked up in the distribution table and crashed on
   // undefined. The caller decides what to pass; the model decides what counts.
   for (const k of METRICS) {
-    out[k] = Math.min(1, Math.max(0, percentileOf(raw[k] ?? 0, DISTRIBUTION.metrics[k])));
+    out[k] = Math.min(1, Math.max(0, percentileOf(raw[k] ?? 0, SCALE.metrics[k])));
   }
   return out;
 }
@@ -118,6 +145,6 @@ export function normalise(raw: RawMetrics): Percentiles {
  * tier it has not earned.
  */
 export function isDegenerate(m: Metric): boolean {
-  const s = DISTRIBUTION.metrics[m];
+  const s = SCALE.metrics[m];
   return s.p50 === s.p90;
 }
