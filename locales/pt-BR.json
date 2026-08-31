@@ -142,6 +142,10 @@
     "percentile_note": "p = percentil sobre n={n} contas amostradas",
     "caveat_reviews": "reviews: escassos na amostra",
     "caveat_merges": "merges: estimado por PRs abertos",
-    "caveat_private": "trabalho privado não contado (sem PAT)"
+    "caveat_private": "trabalho privado não contado (sem PAT)",
+    "shape_bursty": "em rajadas",
+    "shape_steady": "de forma constante",
+    "shape_weekend": "fins de semana",
+    "shape_weekday": "dias úteis"
   }
 }

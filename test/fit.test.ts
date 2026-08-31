@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { fits } from '../src/i18n/fit.js';
+import { fits, SLOTS } from '../src/i18n/fit.js';
 
 /**
  * SVG has no text wrapping. A string that overflows its window just
@@ -11,20 +11,6 @@ import { fits } from '../src/i18n/fit.js';
  * held English at 200px but needed 248px for Spanish `sabbath`.
  */
 const LOCALES = ['en', 'es', 'pt-BR'] as const;
-
-/** Declared width of each text slot on the card, in px. */
-const SLOTS = {
-  'still.ability.name': { size: 11, max: 300 },
-  'still.ability.measures': { size: 9, max: 410 },
-  'status.epithet': { size: 11, max: 220 },
-  'ability.name': { size: 12, max: 200 },
-  'desc.effect': { size: 12, max: 620 },
-  // The ability card: one full-width column, text stopping at the readout
-  // gutter (x=596) from a left margin of x=42.
-  'sheet.ability.name': { size: 13, max: 554 },
-  'sheet.ability.effect': { size: 11, max: 554 },
-  'sheet.ability.measures': { size: 9, max: 554 },
-} as const;
 
 describe('i18n fit — no locale may overflow its slot', () => {
   for (const lang of LOCALES) {
@@ -56,6 +42,17 @@ describe('i18n fit — no locale may overflow its slot', () => {
         const line = `${L.ui.measures_prefix} ${a.measures}`;
         expect(fits(line, S['sheet.ability.measures'].size, S['sheet.ability.measures'].max),
           `${key} measures: "${line}"`).toBe(true);
+      }
+    });
+
+    it(`${lang}: shape adjectives clear the provenance column`, () => {
+      // These sit on the same row as the right-anchored caveat stack. Too long
+      // and they run into it — which English would never reveal, because the
+      // English adjectives are the shortest of the three locales.
+      for (const k of ['shape_bursty', 'shape_steady', 'shape_weekend', 'shape_weekday'] as const) {
+        const s = L.ui[k] as string;
+        expect(fits(s, SLOTS['desc.shapeAdjective'].size, SLOTS['desc.shapeAdjective'].max),
+          `${k}: "${s}" (${s.length} chars)`).toBe(true);
       }
     });
 

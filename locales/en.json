@@ -142,6 +142,10 @@
     "percentile_note": "p = percentile against n={n} sampled accounts",
     "caveat_reviews": "reviews: sparse in sample",
     "caveat_merges": "merges: proxied by PRs opened",
-    "caveat_private": "private work not counted (no PAT)"
+    "caveat_private": "private work not counted (no PAT)",
+    "shape_bursty": "in bursts",
+    "shape_steady": "steadily",
+    "shape_weekend": "weekends too",
+    "shape_weekday": "weekdays"
   }
 }

@@ -201,18 +201,19 @@ export function renderCard(i: CardInput): Card {
    * what this card exists not to be. Commits against reviews is the single
    * ratio the whole thesis rests on.
    */
-  const bar = (bx: number, by: number, label: string, v: number, n: number): string => {
-    const w = 118;
+  const bar = (
+    bx: number, by: number, label: string, v: number, readout: string, w = 118,
+  ): string => {
     const fill = Math.max(2, Math.round(w * v));
     return t(bx, by + 7, label.toUpperCase(), TYPE.fine, th.edge, { track: 1 }) +
       `<rect x="${bx + 32}" y="${by}" width="${w}" height="8" fill="${th.row}"/>` +
       `<rect x="${bx + 32}" y="${by}" width="${fill}" height="8" fill="${th.accent}"/>` +
       `<rect x="${bx + 32}" y="${by}" width="${w}" height="8" fill="none" ` +
       `stroke="${th.edge}" stroke-width="1" opacity=".5"/>` +
-      t(bx + 32 + w + 34, by + 7, String(n), TYPE.fine, th.dim, { anchor: 'end' });
+      t(bx + 32 + w + 34, by + 7, readout, TYPE.fine, th.dim, { anchor: 'end' });
   };
-  s += bar(26, 106, 'cmt', i.p.commits, i.raw['commits'] ?? 0);
-  s += bar(26, 120, 'rev', i.p.reviews, i.raw['reviews'] ?? 0);
+  s += bar(26, 106, 'cmt', i.p.commits, String(i.raw['commits'] ?? 0));
+  s += bar(26, 120, 'rev', i.p.reviews, String(i.raw['reviews'] ?? 0));
 
   // Inside the window. It sat below it before, floating on the sky, which read
   // as a caption that had slipped out of its box.
@@ -286,6 +287,52 @@ export function renderCard(i: CardInput): Card {
       s += t(col + 300, row, `${i.raw[m] ?? 0} · ${fill(L.ui.tier, { n: tier(m) })}`, 9, th.dim);
     });
   }
+  /**
+   * The shape block: the two axes that actually chose the class.
+   *
+   * `burst` and `weekend` split every archetype pair — berserker from warrior,
+   * healer from druid — and until now they appeared nowhere on the status
+   * card. The card named a class and withheld the reason.
+   *
+   * This is the centre of the description window, which carried one sentence
+   * across a quarter of the canvas and was the emptiest region on the card.
+   *
+   * Two bars, not six. docs' rule stands: two is a comparison, six is a chart,
+   * and a chart is the thing this card exists not to be. These two earn the
+   * space because they are the only metrics you cannot move by working *more*
+   * — only by working *differently* — which is the whole claim.
+   *
+   * Animated variant only. The still card already spends this row listing
+   * every ability's `measures:` line, and that line is the one thing docs
+   * calls load-bearing.
+   */
+  if (motion.animate) {
+    const shapeOf = (m: 'burst' | 'weekend') =>
+      sheet.abilities.find((a) => a.metric === m);
+    const bu = shapeOf('burst');
+    const wk = shapeOf('weekend');
+    if (bu && wk) {
+      /**
+       * Below the effect line, not beside it.
+       *
+       * The window looked half empty in English and is not: `desc.effect`
+       * budgets 620px from x=30, and Spanish `endurance` uses 533 of it. The
+       * free region is the band UNDER that line, where the `measures:` and
+       * casts lines stop at ~334px, and to the left of the provenance stack.
+       */
+      const SX = 350;
+      // The adjective describes the METRIC, not the class. Deriving it from
+      // the class would make the card argue for its own answer; deriving it
+      // from the sample median just reports which side of it you sit on.
+      s += bar(SX, 370, 'bst', bu.p, bu.readout, 90);
+      s += t(SX + 166, 377, bu.p >= 0.5 ? L.ui.shape_bursty : L.ui.shape_steady,
+        TYPE.fine, th.edge, { opacity: 0.8 });
+      s += bar(SX, 386, 'wkd', wk.p, wk.readout, 90);
+      s += t(SX + 166, 393, wk.p >= 0.5 ? L.ui.shape_weekend : L.ui.shape_weekday,
+        TYPE.fine, th.edge, { opacity: 0.8 });
+    }
+  }
+
   if (!motion.animate && i.restricted > 0) {
     s += t(30, 398, `${L.ui.sealed_activity}: ${i.restricted}`, 9, th.accent);
   }
