@@ -1,5 +1,83 @@
 # Changelog
 
+## 1.3.0
+
+### Added
+
+**Install with no secret.** `github_token` now defaults to the workflow's own
+`GITHUB_TOKEN`. Setup was: create a fine-grained PAT, add it as a repository
+secret, add a workflow. It is now: add a workflow. The PAT was only ever needed
+for one field — `restrictedContributionsCount` — and everything else the card
+reads is public.
+
+The card says when that field is missing. With the default token `restricted`
+arrives as 0, which is indistinguishable on its face from someone who genuinely
+has no private work, so a `private work not counted` caveat renders on the card
+itself, in all three locales. A PAT run prints nothing. A CI job renders a real
+profile with only `GITHUB_TOKEN`, because the change rests on a claim about
+GitHub's API rather than about this code.
+
+**The two axes that chose your class, on the card.** `burst` and `weekend`
+split every archetype pair — berserker from warrior, healer from druid — and
+appeared nowhere on the status card. Two bars now sit under the effect line
+with their readouts (`2.10x`, `12%`) and a plain-language adjective, so a
+berserker says "in bursts" where a warrior says "steadily". Derived from the
+sample median, not from the class, so the card is not arguing for its own
+answer.
+
+**Reduced motion is honoured.** The documented `<picture>` block now crosses
+colour-scheme with `prefers-reduced-motion`, serving the still card to anyone
+whose system asks for it. No code — `<picture>` has always been able to do
+this and the README was not using it.
+
+**A fixture mode** (`MAINQUEST_FIXTURE`) renders a built-in fixture instead of
+fetching a profile, so CI can run the committed bundle the way a user runs it:
+as a step, reading `INPUT_*`, writing files, with no token and no network.
+
+### Fixed
+
+**The documented quickstart never committed the state file.** `file_pattern`
+was `dist/*.svg`, so `mainquest.state.json` was left behind — and that file is
+what freezes your class for the campaign. Anyone who copied the quickstart had
+their class recomputed from scratch every run, which is precisely the drift the
+freeze exists to prevent.
+
+**Two fixtures did not have the shape their names claimed.** `heavy-committer`
+and `heavy-reviewer`, the two most opposite inputs in the set, both classified
+as `sentinel`: their raw values were extreme on every axis at once, so against
+an n=165 distribution everything landed p80+ and nothing dominated. No test
+asserted a fixture's class, so nothing caught it. They now classify `berserker`
+and `healer`.
+
+**The description window was empty without SMIL.** Every cycling group carried
+`opacity="0"` and relied on animation to reveal the first. In any renderer that
+drops SMIL the card's whole explanation was a blank box.
+
+**Two slot tables disagreed by more than 2x.** `src/i18n/fit.ts` exported a
+`SLOTS` that nothing imported and an `auditLocale()` that nothing called, while
+`test/fit.test.ts` defined its own with different numbers. The dead one looked
+authoritative and said `desc.effect` was 280px; the live one said 620px. One
+table now, in `src`, imported by the test.
+
+**The token error told users to reach for the wrong token** — `read:user` on a
+classic PAT, while every other document recommended a fine-grained token with
+no permissions. That string is what a failed first run prints.
+
+**A typo in `cards`, `themes` or `motion` silently dropped an output.** An
+empty selection already failed loudly; a partial one now warns, like `lang`.
+
+**`engines.node` was `>=20`** against an action that runs `node24` and CI that
+only tested 24. It is `>=22`, and CI tests both.
+
+**GitHub reported the repository as `NOASSERTION`** rather than MIT, because a
+note on bundled art was appended after the licence text. `LICENSE` is stock MIT
+now; the art terms live in `ATTRIBUTION.md`, which also no longer lists sprite
+sources the project does not use.
+
+### Tests
+
+175 -> 188.
+
 ## 1.2.0
 
 ### Added
