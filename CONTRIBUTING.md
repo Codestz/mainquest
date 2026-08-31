@@ -14,6 +14,10 @@ npm run preview        # renders 5 fixtures -> build/preview.html
 To render a real profile you need a GitHub token. `gh auth token` is borrowed
 automatically if you have the CLI logged in; otherwise set `GITHUB_TOKEN`.
 
+Any token that authenticates as *you* is enough — a fine-grained PAT with no
+repository access and no account permissions works, because contribution counts
+are an attribute of the identity rather than a resource.
+
 ```bash
 npm run card -- --user=<login>
 ```

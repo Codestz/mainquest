@@ -80,10 +80,22 @@ Then in your README:
 
 ### Why a PAT and not `GITHUB_TOKEN`
 
-`GITHUB_TOKEN`'s scope for user-level contribution queries is inconsistent, and
-`restrictedContributionsCount` — the count of your private work — is not
-meaningful without a PAT carrying `read:user`. Create one, store it as
-`MAINQUEST_PAT`.
+`GITHUB_TOKEN`'s scope for user-level contribution queries does not return
+`restrictedContributionsCount` — the count of your private work — so a card
+built with it silently shows zero sealed activity.
+
+**Use a fine-grained PAT with no repository access and no account
+permissions.** That is not a shortcut: there is no permission to grant.
+Contribution counts are an attribute of the authenticated identity rather than
+a resource, so nothing in the fine-grained permission list maps to them, and a
+token with everything set to "No access" returns them correctly. Verified
+against both queries this Action makes.
+
+If you prefer a classic token, `read:user` works — but it grants strictly more
+than this needs.
+
+Fine-grained tokens expire (one year maximum). This runs on a schedule, so when
+it expires the card stops updating quietly. Set a reminder.
 
 If most of your work is in private or SSO-protected repositories, see
 [private contributions](#private-and-sso-protected-work) below.

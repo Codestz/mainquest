@@ -7,7 +7,15 @@ branding:
 
 inputs:
   github_token:
-    description: 'PAT with read:user. GITHUB_TOKEN scope is inconsistent for user-level contribution queries and will not return restrictedContributionsCount.'
+    description: >-
+      A personal access token. GITHUB_TOKEN will NOT work: its scope for
+      user-level contribution queries does not return
+      restrictedContributionsCount, so private work vanishes from the card.
+      A fine-grained PAT with NO repository access and NO account permissions
+      is sufficient and is the safest option — contribution counts are an
+      attribute of the authenticated identity, not a resource, so there is no
+      permission to grant. Verified: such a token returns the private count and
+      the merged-PR search correctly.
     required: true
   username:
     description: 'GitHub login to render.'
