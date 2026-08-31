@@ -1,5 +1,77 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+**A second card: `abilities-{dark,light}.svg`.** 880×620, no motion, all eight
+abilities at once with `measures:` line, raw count, tier and percentile. The
+status card has room to name four; `burst fire` and `sabbath` decide half of
+every class split and had never been rendered anywhere. Selected with the new
+`cards: status,abilities` input.
+
+It is a card *kind*, not a motion variant. Filed under `motion`, a workflow
+asking for `animated` would have silently lost the whole card.
+
+Shape metrics read in their own units — `1.02×`, `48%` — not as raw counts
+(`burst` is a coefficient of variation ×1000, `weekend` a per-mille share).
+Percentiles print as `p93` rather than "top 7%", which becomes an insult at the
+bottom of the scale.
+
+**Class ambience.** The character now emits something belonging to its class:
+five behaviours (`embers`, `sparks`, `motes`, `leaves`, `dust`) coloured per
+class. Withheld from an unclassed profile, like the class name itself.
+
+**Rank on the ground.** Concentric rings at the feet, one per rank above
+apprentice — an apprentice gets none, or the ring would mean "character"
+instead of rank. Gated on *not unclassed* rather than *classed*: rank comes
+from public reviews and PRs, which survive a seal.
+
+**A foreground bank and a bird flock.** The scene had a background and a middle
+ground and nothing in front. The bank is derived from the same monthly totals as
+the ridges, heavily flattened — one landscape at four depths. Birds ride the sky
+layer so they pass behind the menu windows, and do not fly in fog or snow.
+
+**Two-frame sprite idles.** All thirteen classes, via a clip window stepped one
+frame width with `calcMode="discrete"` — one animated element per character.
+
+### Fixed
+
+**`tier(0)` returned 1.** A profile with no reviews lit a pip beside "second
+opinion" and printed *tier 1 of 3*. An ability never used is untrained, not
+tier 1. The floor keys to the raw count, not the percentile, so someone at the
+bottom of the sample who *has* done the thing still gets tier 1. Invisible at
+four rows; unmissable once eight were on screen at once.
+
+**`weather('snow')` blew the animation budget.** One `<animateTransform>` per
+flake — 26, atop the ~30 the rest of the card spends, against a limit of 40. No
+fixture reached it: snow needs a profile that was busy and then stopped, and
+every fixture is uniformly busy or uniformly empty. Now three seamlessly
+scrolling fields (`render/scene/field.ts`) — more snow, three elements.
+
+**The ability cursor cost eight elements for four rows.** Highlight and arrow
+ran identical keyframes off an identical clock; they now share one `<animate>`.
+
+### Changed
+
+**Derivation extracted to `render/sheet.ts`.** Two cards each running their own
+`classify()`, `standing()` and `rank()` is two chances to disagree — and a
+status card reading "Hermit" beside an ability card reading "Sentinel" would
+look fine on both. Tests assert the two agree on class and on every tier.
+
+**`lang` documented as reserved.** It has never been wired: the renderer
+imports `en` directly. The `es` and `pt-BR` files are complete and validated
+against every text slot, but nothing loads them. Removed from the README
+quickstart rather than left implying it works.
+
+### Tests
+
+56 → 137. New: the animation and byte budgets across every fixture × day ×
+theme (including a synthetic went-quiet profile, the only input that reaches
+the snow branch); every declared scene axis actually reaching the canvas; the
+two cards agreeing; and the ability card's three text slots fitting in all
+three locales.
+
 ## 1.0.0
 
 First release. A GitHub Action that reads a profile's public contribution data,

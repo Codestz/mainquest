@@ -19,6 +19,11 @@ const SLOTS = {
   'status.epithet': { size: 11, max: 220 },
   'ability.name': { size: 12, max: 200 },
   'desc.effect': { size: 12, max: 620 },
+  // The ability card: one full-width column, text stopping at the readout
+  // gutter (x=596) from a left margin of x=42.
+  'sheet.ability.name': { size: 13, max: 554 },
+  'sheet.ability.effect': { size: 11, max: 554 },
+  'sheet.ability.measures': { size: 9, max: 554 },
 } as const;
 
 describe('i18n fit — no locale may overflow its slot', () => {
@@ -37,6 +42,20 @@ describe('i18n fit — no locale may overflow its slot', () => {
         const line = `${L.ui.measures_prefix} ${a.measures}`;
         expect(fits(line, SLOTS['still.ability.measures'].size, SLOTS['still.ability.measures'].max),
           `${key}: "${line}" (${line.length} chars)`).toBe(true);
+      }
+    });
+
+    it(`${lang}: every ability line fits the ability card's column`, () => {
+      for (const [key, a] of Object.entries(L.abilities) as
+        Array<[string, { name: string; effect: string; measures: string }]>) {
+        const S = SLOTS;
+        expect(fits(a.name, S['sheet.ability.name'].size, S['sheet.ability.name'].max),
+          `${key} name`).toBe(true);
+        expect(fits(a.effect, S['sheet.ability.effect'].size, S['sheet.ability.effect'].max),
+          `${key} effect: "${a.effect}" (${a.effect.length} chars)`).toBe(true);
+        const line = `${L.ui.measures_prefix} ${a.measures}`;
+        expect(fits(line, S['sheet.ability.measures'].size, S['sheet.ability.measures'].max),
+          `${key} measures: "${line}"`).toBe(true);
       }
     });
 

@@ -1,7 +1,15 @@
-import SPRITES from '../../../data/sprites.v2.json' with { type: 'json' };
+import SPRITES from '../../../data/sprites.v3.json' with { type: 'json' };
 import type { ClassName } from '../../derive.js';
 
-export interface Sprite { w: number; h: number; bytes: number; dataUri: string }
+export interface Sprite {
+  /** ONE frame's width. The image is `w * frames` wide. */
+  w: number;
+  h: number;
+  /** 1 for a static sprite, 2 for a two-frame idle sheet. */
+  frames: number;
+  bytes: number;
+  dataUri: string;
+}
 const FAMILIAR_TABLE = SPRITES.familiars as Record<string, Sprite>;
 const CLASS_TABLE = SPRITES.classes as Record<string, Sprite>;
 export const FAMILIARS = Object.keys(FAMILIAR_TABLE) as [string, ...string[]];
@@ -31,17 +39,52 @@ export function sprite(
   const w = c.w * scale, h = c.h * scale;
 
   let out = `<g>`;
-  out += `<ellipse cx="${x}" cy="${groundY + 2}" rx="${Math.round(w * 0.42)}" ry="5" fill="${th?.shadow ?? '#0B1A10'}" opacity=".45"/>`;
+  out += `<ellipse cx="${x}" cy="${groundY + 2}" rx="${Math.round(w * 0.42)}" ry="5" ` +
+    `fill="${th?.shadow ?? '#0B1A10'}" opacity=".45"/>`;
 
-  // Idle bob: small, slow, and the only motion on the character (docs/04's
-  // animation budget — everything that loops must be cheap).
-  const bob = motion?.animate === false ? '' :
+  /**
+   * Two-frame idle, via the clipPath trick.
+   *
+   * Both frames sit side by side in one image; a clip window one frame wide
+   * shows only the first, and translateX steps the image left by exactly one
+   * frame with `calcMode="discrete"` — no tweening, so it snaps the way a
+   * sprite should rather than sliding.
+   *
+   * One <image> and one <animateTransform>: a single element against the
+   * 40-element budget, where cross-fading two images would cost two and would
+   * blend between frames instead of cutting.
+   */
+  const frames = c.frames ?? 1;
+  const animated = motion?.animate !== false;
+  const clipId = `f${Math.abs(hashName(familiarKey + klass + scale))}`;
+
+  const bob = !animated ? '' :
     `<animateTransform attributeName="transform" type="translate" ` +
     `values="0 0; 0 -3; 0 0" dur="1.9s" repeatCount="indefinite" calcMode="spline" ` +
     `keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" keyTimes="0;0.5;1"/>`;
-  out += `<g>${bob}` +
-    `<image href="${c.dataUri}" x="${Math.round(x - w / 2)}" y="${groundY - h}" ` +
-    `width="${w}" height="${h}" image-rendering="pixelated"/></g>`;
+
+  const left = Math.round(x - w / 2);
+  const top = groundY - h;
+
+  out += `<g>${bob}`;
+  if (frames > 1 && animated) {
+    out += `<defs><clipPath id="${clipId}">` +
+      `<rect x="${left}" y="${top}" width="${w}" height="${h}"/></clipPath></defs>`;
+    out += `<g clip-path="url(#${clipId})">` +
+      `<g><animateTransform attributeName="transform" type="translate" ` +
+      `values="0 0;${-w} 0" dur="1.9s" repeatCount="indefinite" calcMode="discrete"/>` +
+      `<image href="${c.dataUri}" x="${left}" y="${top}" ` +
+      `width="${w * frames}" height="${h}" image-rendering="pixelated"/>` +
+      `</g></g>`;
+  } else {
+    // Still cards show frame one only — the same clip window, no stepping.
+    out += `<defs><clipPath id="${clipId}">` +
+      `<rect x="${left}" y="${top}" width="${w}" height="${h}"/></clipPath></defs>` +
+      `<image href="${c.dataUri}" x="${left}" y="${top}" ` +
+      `width="${w * frames}" height="${h}" image-rendering="pixelated" ` +
+      `clip-path="url(#${clipId})"/>`;
+  }
+  out += `</g>`;
 
   if (f) {
     const fw = f.w * (scale - 0.6), fh = f.h * (scale - 0.6);
@@ -57,4 +100,11 @@ export function sprite(
       `image-rendering="pixelated" opacity=".95"/></g>`;
   }
   return out + `</g>`;
+}
+
+/** Stable id source — the clip window needs a unique, deterministic id. */
+function hashName(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(h, 31) + s.charCodeAt(i)) | 0;
+  return h;
 }

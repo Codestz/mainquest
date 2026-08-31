@@ -85,19 +85,109 @@ export const THEMES: Record<Theme['name'], Theme> = { dark: DARK, light: LIGHT }
 export const esc = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-/** Text in the card's only font: `ui-monospace` (docs/04 — no embedded fonts). */
+/**
+ * Text in the card's only font: `ui-monospace` (no embedded fonts — an SVG in
+ * an <img> cannot load one, and base64-ing a pixel font pushes the file past
+ * 200KB).
+ *
+ * With one family and one weight available, hierarchy has to come from SIZE,
+ * CASE, TRACKING and COLOUR instead. The first version used none of them: nine
+ * text sizes between 9 and 14px, everything lower-case, everything the same
+ * weight — which read as unfinished rather than as a considered register.
+ */
+export interface TextOpts {
+  /** Letter-spacing in px. Headers open up; body text stays at 0. */
+  track?: number;
+  /** Right-align to `x` instead of left. Numbers want this. */
+  anchor?: 'start' | 'middle' | 'end';
+  opacity?: number;
+}
+
 export const text = (
-  x: number, y: number, s: string, size: number, fill: string,
+  x: number, y: number, s: string, size: number, fill: string, o: TextOpts = {},
 ): string =>
   `<text x="${x}" y="${y}" font-family="ui-monospace,monospace" font-size="${size}" ` +
-  `fill="${fill}">${esc(s)}</text>`;
+  `fill="${fill}"` +
+  (o.track ? ` letter-spacing="${o.track}"` : '') +
+  (o.anchor && o.anchor !== 'start' ? ` text-anchor="${o.anchor}"` : '') +
+  (o.opacity !== undefined ? ` opacity="${o.opacity}"` : '') +
+  `>${esc(s)}</text>`;
 
-/** Classic JRPG menu chrome: square corners, double border, identical always. */
-export const window = (th: Theme, x: number, y: number, w: number, h: number): string =>
-  `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${th.win}" ` +
-  `stroke="${th.ink}" stroke-width="2"/>` +
-  `<rect x="${x + 5}" y="${y + 5}" width="${w - 10}" height="${h - 10}" fill="none" ` +
-  `stroke="${th.edge}" stroke-width="1"/>`;
+/**
+ * The type scale. Five steps, not nine — each has one job.
+ *
+ * Monospace gives no small-caps, so a "header" is uppercase plus tracking.
+ * That is the one move that reads as deliberate in a single-weight font.
+ */
+export const TYPE = {
+  /** The login. The largest thing on the card. */
+  name: 15,
+  /** Class, rank — the identity line. */
+  identity: 12,
+  /** Section headers: ABILITIES. Uppercased and tracked by the caller. */
+  header: 11,
+  /** Ability names, effect prose. */
+  body: 12,
+  /** Epithets, metric names, counts. */
+  detail: 10,
+  /** Provenance, caveats, the seal. */
+  fine: 9,
+} as const;
+
+/** Section headers are upper-case and tracked — the only such move available. */
+export const header = (x: number, y: number, s: string, fill: string): string =>
+  text(x, y, s.toUpperCase(), TYPE.header, fill, { track: 2 });
+
+/** Title Case for proper nouns: class names, ranks. */
+export const title = (s: string): string =>
+  s.replace(/\b[a-z]/g, (c) => c.toUpperCase());
+
+/**
+ * Classic JRPG menu chrome.
+ *
+ * Square corners, double border, identical for every user (docs/04). The first
+ * version was exactly that and no more, which read as a plain rectangle rather
+ * than a menu. Three cheap additions fix it without leaving the genre:
+ *
+ *   - corner brackets, the standard JRPG menu tell
+ *   - a one-pixel inner highlight along the top edge, for depth
+ *   - an optional title tab, so a window can name itself
+ *
+ * Still square, still two borders, still identical across users — just built
+ * rather than drawn.
+ */
+export const window = (
+  th: Theme, x: number, y: number, w: number, h: number, label?: string,
+): string => {
+  const C = 7; // corner bracket arm length
+  const bracket = (cx: number, cy: number, dx: number, dy: number): string =>
+    `<path d="M${cx + dx * C} ${cy} L${cx} ${cy} L${cx} ${cy + dy * C}" ` +
+    `fill="none" stroke="${th.accent}" stroke-width="2" opacity=".9"/>`;
+
+  let out =
+    `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${th.win}" ` +
+    `stroke="${th.ink}" stroke-width="2"/>` +
+    // Inner highlight: one line under the top border reads as a lit bevel.
+    `<line x1="${x + 3}" y1="${y + 3}" x2="${x + w - 3}" y2="${y + 3}" ` +
+    `stroke="${th.ink}" stroke-width="1" opacity=".25"/>` +
+    `<rect x="${x + 5}" y="${y + 5}" width="${w - 10}" height="${h - 10}" fill="none" ` +
+    `stroke="${th.edge}" stroke-width="1"/>`;
+
+  out += bracket(x + 3, y + 3, 1, 1) + bracket(x + w - 3, y + 3, -1, 1) +
+         bracket(x + 3, y + h - 3, 1, -1) + bracket(x + w - 3, y + h - 3, -1, -1);
+
+  if (label) {
+    // A tab that overlaps the top border, the way a menu names a panel.
+    // Width must account for the TRACKING, not just the glyphs: header() adds
+    // 2px per character, so a 9-char label was 18px wider than the tab drawn
+    // for it and rendered as "ABILITIE".
+    const tw = label.length * (TYPE.header * 0.6 + 2) + 26;
+    out += `<rect x="${x + 14}" y="${y - 9}" width="${tw}" height="18" fill="${th.win}" ` +
+      `stroke="${th.ink}" stroke-width="2"/>` +
+      header(x + 25, y + 4, label, th.accent);
+  }
+  return out;
+};
 
 /**
  * Whether this render may animate.

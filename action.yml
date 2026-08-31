@@ -22,7 +22,12 @@ inputs:
     required: false
     default: ${{ github.repository_owner }}
   lang:
-    description: 'en | es | pt-BR'
+    description: >-
+      RESERVED — not yet wired. The renderer currently emits English only.
+      The es and pt-BR locale files ship complete and are validated against
+      every text slot by the layout tests, but nothing loads them yet. Setting
+      this has no effect today; it is kept so that workflows written now do
+      not need editing when it lands.
     required: false
     default: 'en'
   outputs:
@@ -34,9 +39,18 @@ inputs:
     required: false
     default: 'dark,light'
   motion:
-    description: 'Comma-separated: animated,still'
+    description: >-
+      Comma-separated: animated,still. Applies to the status card only — the
+      ability card has nothing to animate.
     required: false
     default: 'animated,still'
+  cards:
+    description: >-
+      Comma-separated: status,abilities. `status` is the scene (character,
+      horizon, four abilities); `abilities` is a taller companion sheet listing
+      all eight abilities with their measures, counts and percentiles.
+    required: false
+    default: 'status,abilities'
   campaign:
     description: 'Year to render. Defaults to the current calendar year. The campaign is the calendar year.'
     required: false

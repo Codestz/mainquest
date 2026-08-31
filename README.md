@@ -59,8 +59,8 @@ jobs:
         with:
           github_token: ${{ secrets.MAINQUEST_PAT }}
           username: ${{ github.repository_owner }}
-          lang: en
           outputs: dist/
+          cards: status,abilities
 
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
@@ -76,7 +76,15 @@ Then in your README:
   <source media="(prefers-color-scheme: light)" srcset="dist/card-light.svg">
   <img alt="MainQuest" src="dist/card-dark.svg">
 </picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)"  srcset="dist/abilities-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="dist/abilities-light.svg">
+  <img alt="MainQuest abilities" src="dist/abilities-dark.svg">
+</picture>
 ```
+
+Embed either on its own. They are separate files precisely so you can.
 
 ### Why a PAT and not `GITHUB_TOKEN`
 
@@ -102,12 +110,30 @@ If most of your work is in private or SSO-protected repositories, see
 
 ## Outputs
 
+Two cards, because they answer different questions.
+
+**The status card** (880×420) is the scene: your character standing on a
+horizon built from your own year, with four abilities cycling one at a time.
+
+**The ability card** (880×620) is the reading copy: all eight abilities at
+once, larger, with their `measures:` line, raw count, tier and percentile. No
+scene, no motion — there is nothing to cycle through when everything is already
+on screen.
+
 | File | |
 |---|---|
-| `card-dark.svg` | Animated, dark |
-| `card-light.svg` | Animated, light |
-| `card-dark-still.svg` | No motion. Every ability listed at once |
+| `card-dark.svg` | Status card, animated, dark |
+| `card-light.svg` | Status card, animated, light |
+| `card-dark-still.svg` | Status card, no motion. Every ability listed at once |
 | `card-light-still.svg` | The same, light |
+| `abilities-dark.svg` | Ability card, all eight, dark |
+| `abilities-light.svg` | Ability card, all eight, light |
+
+Pick with the `cards` (`status,abilities`), `themes` (`dark,light`) and
+`motion` (`animated,still`) inputs. `motion` applies to the status card only —
+the ability card has nothing to animate, so it is a separate *kind* rather than
+a third motion variant. That matters: filed under motion, a workflow asking for
+`animated` would have silently lost the whole card.
 
 Rendering is deterministic: the same profile on the same day produces
 byte-identical SVGs, so a daily workflow commits nothing when nothing changed.
@@ -117,8 +143,8 @@ byte-identical SVGs, so a daily workflow commits nothing when nothing changed.
 ```bash
 npm install
 npm run card -- --user=<login>     # -> build/cards/*.svg
-npm run preview                    # 5 fixture profiles -> build/preview.html
-npm run check                      # typecheck + 56 tests
+npm run preview                    # 5 fixture profiles, both cards -> build/preview.html
+npm run check                      # typecheck + 137 tests
 ```
 
 ## What the card shows
@@ -145,6 +171,16 @@ profiles.
 `measures:` line naming the actual metric in dimmer type, so someone who
 ignores the RPG framing reads only those lines and gets an ordinary stats card.
 Nobody is ever forced to decode.
+
+The status card has room to name four of them. The **ability card** shows all
+eight, including `burst fire` and `sabbath` — the two shape metrics that decide
+half of every class split and that the status card has no room to print. It
+reads them in their own units (a variance ratio, a weekend percentage) rather
+than as counts, and labels each with a percentile rather than a "top N%",
+because "top N%" turns into an insult at the bottom of the scale.
+
+An ability with a raw count of zero is **tier 0** — no pips, no bar. Untrained,
+not tier 1.
 
 **Debuffs** — `lone wolf`, `revolving door`, `ivory tower`. The honest half.
 Every good character sheet shows what you are bad at.
@@ -182,8 +218,15 @@ Two things are honest about their limits, on the card and here:
 - `merges` is real for a rendered card, but the *scale* it is scored against
   still uses PRs-opened, because the bulk sampler skips the Tier 1 search.
 
-Also known: sprite proportions drift between classes, and cards are ~30 KB
-against a 25 KB target (40 KB hard limit).
+Also known:
+
+- `lang` is accepted and ignored. The renderer emits English only. The `es` and
+  `pt-BR` files are complete and every text slot in both is validated by the
+  layout tests — they are simply not loaded yet.
+- Sprite proportions drift between classes.
+- The status card is ~28 KB against a 25 KB target (40 KB hard limit); the
+  ability card is ~18 KB. Both hold under the 40-element animation budget,
+  which is now enforced by a test across every fixture, day and theme.
 
 See [`CHANGELOG.md`](CHANGELOG.md).
 

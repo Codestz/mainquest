@@ -14,18 +14,20 @@
  */
 
 import en from '../../locales/en.json' with { type: 'json' };
-import { classify, classMargin, standing, rank, debuffs, type Percentiles } from '../derive.js';
-import { campaignSeed, pick, seal, streamForAxis } from '../identity/index.js';
+import type { Percentiles } from '../derive.js';
 import { DISTRIBUTION, MERGES_IS_PROXY, isDegenerate } from '../normalise.js';
-import { composeSigil } from './sigil/index.js';
+import { ABILITY_OF, COUNTED, characterSheet } from './sheet.js';
 import {
-  DARK, H, MOVING, THEMES, W, esc, text, window as menu,
+  DARK, H, MOVING, THEMES, TYPE, W, esc, text, title, window as menu,
   type Motion, type Theme,
 } from './theme.js';
-import { sky } from './scene/sky.js';
+import { sky, celestial, starScatter, constellation } from './scene/sky.js';
 import { horizon } from './scene/horizon.js';
+import { readWeather, weather } from './scene/weather.js';
 import { terrain } from './scene/terrain.js';
-import { sprite, FAMILIARS } from './scene/sprite.js';
+import { sprite } from './scene/sprite.js';
+import { foreground, birds } from './scene/foreground.js';
+import { ambience, rankAura } from './scene/aura.js';
 
 export interface CardInput {
   login: string;
@@ -51,13 +53,6 @@ export interface CardInput {
 }
 
 
-const ABILITY_OF: Record<string, keyof typeof en.abilities> = {
-  commits: 'sustained_strike', reviews: 'second_opinion', merges: 'close_the_loop',
-  streak: 'endurance', repos: 'open_fronts', issues: 'tracking',
-};
-
-const tier = (v: number): number => (v >= 0.85 ? 3 : v >= 0.5 ? 2 : 1);
-
 
 export interface Card { svg: string; credit: { id: string; author: string }; klass: import('../derive.js').ClassName }
 
@@ -65,26 +60,30 @@ export function renderCard(i: CardInput): Card {
   const L = en;
   const th = THEMES[i.theme ?? 'dark'] ?? DARK;
   const motion = i.motion ?? MOVING;
-  const t = (x: number, y: number, str: string, size: number, fill = th.ink): string =>
-    text(x, y, str, size, fill);
-  const win = (x: number, y: number, w: number, h: number): string => menu(th, x, y, w, h);
-  const [klass, sub] = classify(i.p);
-  // What the card is entitled to claim, given what it can see.
-  const state = standing(i.p, { sealed: i.restricted, total: i.calendarTotal });
-  const classified = state === 'classed';
-  const margin = classMargin(i.p);
-  const rk = rank(i.raw['reviews'] ?? 0, i.prsOpened, i.accountAgeYears);
-  const debs = debuffs(i.p);
-  const sig = composeSigil(i.login, i.campaign, 40);
+  const t = (
+    x: number, y: number, str: string, size: number, fill = th.ink,
+    o?: Parameters<typeof text>[5],
+  ): string => text(x, y, str, size, fill, o);
+  const win = (x: number, y: number, w: number, h: number, label?: string): string =>
+    menu(th, x, y, w, h, label);
+  // Every derived fact comes from one place, so the two cards cannot disagree.
+  const sheet = characterSheet(i);
+  const { klass, sub, state, classified, margin, sigil: sig, seal: mark, drift } = sheet;
+  const rk = sheet.rank;
+  const debs = sheet.debuffs;
   const bands = sky(i.campaignDay, th);
-  const mark = seal(campaignSeed(i.login, i.campaign));
 
-  // paletteDrift is the per-campaign seeded axis: it tints the WORLD only,
-  // never the chrome (docs/04).
-  const drift = Math.round((streamForAxis(i.login, i.campaign, 'paletteDrift')() - 0.5) * 36);
-
-  const metrics = ['commits', 'reviews', 'merges', 'streak', 'repos', 'issues'] as const;
-  const top4 = [...metrics].sort((a, b) => i.p[b] - i.p[a]).slice(0, 4);
+  // The status card ranks only the six COUNTED metrics: `burst` and `weekend`
+  // describe the SHAPE that chose the class, so listing them as abilities here
+  // would be the card explaining its own working. The ability card prints all
+  // eight, which is the place for that.
+  const top4 = sheet.abilities
+    .filter((a) => (COUNTED as readonly string[]).includes(a.metric))
+    .slice(0, 4);
+  // Tier comes off the shared sheet so the two cards cannot show a different
+  // number of pips for the same ability.
+  const tierOfMetric = new Map(sheet.abilities.map((a) => [a.metric, a.tier]));
+  const tier = (m: string): number => tierOfMetric.get(m as never) ?? 0;
 
   let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img">`;
   s += `<title>${esc(i.login)} — ${L.classes[klass].name}, ${L.ranks[rk as keyof typeof L.ranks]} — a MainQuest character sheet derived from public GitHub activity</title>`;
@@ -118,76 +117,118 @@ export function renderCard(i: CardInput): Card {
   s += `<rect width="${W}" height="130" fill="${bands[0]}"/>`;
   s += `<rect y="130" width="${W}" height="60" fill="${bands[1]}"/>`;
   s += `<rect y="190" width="${W}" height="70" fill="${bands[2]}"/>`;
-  for (let n = 0; n < 14; n++) {
-    const x = (n * 137) % W, y = 20 + ((n * 53) % 110);
-    s += motion.animate
-      ? `<rect x="${x}" y="${y}" width="3" height="3" fill="${th.star}" opacity=".6">` +
-        `<animate attributeName="opacity" values=".2;1;.2" dur="${3 + (n % 4)}s" begin="${(n * 0.4).toFixed(1)}s" repeatCount="indefinite"/></rect>`
-      : `<rect x="${x}" y="${y}" width="3" height="3" fill="${th.star}" opacity=".6"/>`;
-  }
+
+  // starScatter is 'fixed' — identical for everyone, so that the constellation
+  // drawn over it is the ONLY starfield carrying signal.
+  s += starScatter(th, motion.animate);
+  // Birds ride in the sky layer so they pass BEHIND the menu windows —
+  // emerging from one and vanishing into the other is what sells the distance.
+  const wx = readWeather(i.weeks, i.campaignDay);
+  if (wx === 'clear' || wx === 'drifting') s += birds(th, motion.animate);
+  s += celestial(i.campaignDay, th, motion.animate);
+  // constellation is 'data' — the campaign's peak weeks, joined in order.
+  s += constellation(i.weeks, th, motion.animate);
+
   // --- ground: drifted (seeded, per campaign) -------------------------------
   s += `<g filter="url(#drift)">`;
-  s += horizon(i.weeks, 252, th.mountain);
+  s += horizon(i.weeks, 252, th);
   s += terrain(i.weeks, 24, 258, th, motion);
   s += `</g>`;
-    // The gap between the status window (ends x=316) and the ability window
-  // (starts x=560) was dead space. The character belongs there.
-  const familiar = pick(streamForAxis(i.login, i.campaign, 'spriteAccessory'), FAMILIARS);
-  // The art must not claim what the text declines to. Rendering the berserker
-  // sprite beside "unclassed" said two different things at once — `novice` is
-  // a deliberately plain, unarmed figure, and it is NOT a thirteenth class.
+
+  // weather is 'data' — the last 30 days against this profile's OWN baseline,
+  // never against other people. Sits between the ridges and the ground.
+  s += weather(wx, th, 250, motion.animate);
+
+  // The gap between the status window and the ability window was dead space.
+  const familiar = sheet.familiar;
+  // Ground first, then figure, then air: the three layers the character needs
+  // in order to be standing somewhere instead of pasted on.
+  // Rank is gated on 'not unclassed', not on 'classed'. A sealed account's
+  // identity line still says "Sealed · Master" — rank comes from public
+  // reviews and PRs, which survive the seal. It is the CLASS that is withheld,
+  // so it is the class ambience, below, that has to stay silent.
+  if (state !== 'unclassed') s += rankAura(rk, 416, 258, th, motion.animate);
+  // The art must not claim what the text declines to.
   s += sprite(416, 258, classified ? klass : 'novice', familiar, 2, th, motion);
+  if (classified) s += ambience(klass, 416, 258, motion.animate);
+
+  // The near bank, in front of the grid the character stands on.
+  s += `<g filter="url(#drift)">${foreground(i.weeks, 296, th)}</g>`;
 
   // --- status window ---
-  s += win(16, 16, 300, 104);
-  s += `<g transform="translate(24 22)">${sig.svg}</g>`;
-  s += t(76, 42, i.login, 14);
+  s += win(16, 16, 320, 128);
+  s += `<g transform="translate(26 26)">${sig.svg}</g>`;
+  s += t(84, 44, i.login, TYPE.name, th.ink, { track: 0.5 });
+
   if (classified) {
-    s += t(76, 60, `${L.classes[klass].name} · ${L.ranks[rk as keyof typeof L.ranks]}`, 11, th.accent);
-    s += t(76, 76, `${L.classes[klass].epithet}`, 11, th.edge);
-    // Margin is shape, not merit: a textbook example of an archetype and a
-    // hybrid who fits none cleanly are both interesting, neither is better.
-    s += t(76, 92, margin > 0.12
-      ? `true ${L.classes[klass].name}`
+    s += t(84, 62, `${title(L.classes[klass].name)} · ${title(L.ranks[rk as keyof typeof L.ranks])}`,
+      TYPE.identity, th.accent);
+    s += t(84, 78, L.classes[klass].epithet, TYPE.detail, th.edge, { opacity: 0.85 });
+    s += t(84, 92, margin > 0.12
+      ? `True ${title(L.classes[klass].name)}`
       : margin < 0.03
-        ? `hybrid · also ${L.classes[sub].name}`
-        : `path of the ${L.classes[sub].name}`, 11, th.edge);
+        ? `Hybrid · also ${title(L.classes[sub].name)}`
+        : `Path of the ${title(L.classes[sub].name)}`, TYPE.detail, th.edge, { opacity: 0.7 });
   } else if (state === 'sealed') {
-    // The rhythm is real (the calendar counts private days); the role is not
-    // knowable, because a restricted count carries no type.
-    s += t(76, 60, `sealed · ${L.ranks[rk as keyof typeof L.ranks]}`, 11, th.accent);
-    s += t(76, 76, 'the work is behind a door', 11, th.edge);
-    s += t(76, 92, 'rhythm known, role not', 11, th.edge);
+    s += t(84, 62, `Sealed · ${title(L.ranks[rk as keyof typeof L.ranks])}`, TYPE.identity, th.accent);
+    s += t(84, 78, 'the work is behind a door', TYPE.detail, th.edge, { opacity: 0.85 });
+    s += t(84, 92, 'rhythm known, role not', TYPE.detail, th.edge, { opacity: 0.7 });
   } else {
-    s += t(76, 60, 'unclassed', 11, th.accent);
-    s += t(76, 76, 'the campaign has not begun', 11, th.edge);
+    s += t(84, 62, 'Unclassed', TYPE.identity, th.accent);
+    s += t(84, 78, 'the campaign has not begun', TYPE.detail, th.edge, { opacity: 0.85 });
   }
-  s += t(24, 112, `${L.ui.campaign.replace('{year}', String(i.campaign))} · day ${i.campaignDay}`, 10, th.dim);
+
+  /**
+   * `statBars` — 'data'. Declared in the axis policy and, until now, never
+   * built: the original mockup showed `cmt ████████░░ 1.284` and the renderer
+   * simply never drew it.
+   *
+   * Two bars, because two is a comparison and six is a chart — and a chart is
+   * what this card exists not to be. Commits against reviews is the single
+   * ratio the whole thesis rests on.
+   */
+  const bar = (bx: number, by: number, label: string, v: number, n: number): string => {
+    const w = 118;
+    const fill = Math.max(2, Math.round(w * v));
+    return t(bx, by + 7, label.toUpperCase(), TYPE.fine, th.edge, { track: 1 }) +
+      `<rect x="${bx + 32}" y="${by}" width="${w}" height="8" fill="${th.row}"/>` +
+      `<rect x="${bx + 32}" y="${by}" width="${fill}" height="8" fill="${th.accent}"/>` +
+      `<rect x="${bx + 32}" y="${by}" width="${w}" height="8" fill="none" ` +
+      `stroke="${th.edge}" stroke-width="1" opacity=".5"/>` +
+      t(bx + 32 + w + 34, by + 7, String(n), TYPE.fine, th.dim, { anchor: 'end' });
+  };
+  s += bar(26, 106, 'cmt', i.p.commits, i.raw['commits'] ?? 0);
+  s += bar(26, 120, 'rev', i.p.reviews, i.raw['reviews'] ?? 0);
+
+  // Inside the window. It sat below it before, floating on the sky, which read
+  // as a caption that had slipped out of its box.
+  s += t(26, 138, `${L.ui.campaign.replace('{year}', String(i.campaign))} · day ${i.campaignDay}`,
+    TYPE.fine, th.dim, { opacity: 0.8 });
 
   // --- ability window ---
-  s += win(560, 16, 304, 176);
-  s += t(574, 38, L.ui.abilities, 12, th.dim);
-  top4.forEach((m, n) => {
+  s += win(560, 16, 304, 186, L.ui.abilities);
+  top4.forEach(({ metric: m }, n) => {
     const key = ABILITY_OF[m]!;
-    const y = 60 + n * 26;
-    // The cursor exists to point at ONE ability while the description window
-    // shows its text. With no motion there is no cursor and no highlight —
-    // every ability is simply listed (docs/04).
+    const y = 58 + n * 27;
     if (motion.animate) {
-      s += `<rect x="566" y="${y - 13}" width="292" height="22" fill="${th.row}" opacity="0">` +
-        `<animate attributeName="opacity" values="1;0;0;0" dur="12s" begin="${n * 3}s" repeatCount="indefinite" calcMode="discrete"/></rect>`;
-      s += `<text x="576" y="${y + 2}" font-family="ui-monospace,monospace" font-size="12" fill="${th.accent}" opacity="0">&gt;` +
-        `<animate attributeName="opacity" values="1;0;0;0" dur="12s" begin="${n * 3}s" repeatCount="indefinite" calcMode="discrete"/></text>`;
+      // Highlight and cursor share ONE <animate> on a wrapping <g>. They were
+      // two elements running the identical keyframes on the identical clock:
+      // four rows spent eight of the forty-element budget saying one thing.
+      s += `<g opacity="0"><animate attributeName="opacity" values="1;0;0;0" dur="12s" begin="${n * 3}s" repeatCount="indefinite" calcMode="discrete"/>` +
+        `<rect x="566" y="${y - 14}" width="292" height="23" fill="${th.row}"/>` +
+        // A pointing glyph rather than a ">" — the cursor is chrome, not text.
+        `<polygon points="574,${y - 5} 582,${y - 1} 574,${y + 3}" fill="${th.accent}"/></g>`;
     }
-    s += t(590, y + 2, L.abilities[key].name, 12);
-    const tr = tier(i.p[m]);
+    s += t(590, y + 1, L.abilities[key].name, TYPE.body);
+    const tr = tier(m);
     for (let k = 0; k < 3; k++) {
-      s += `<rect x="${812 + k * 12}" y="${y - 6}" width="8" height="8" fill="${k < tr ? th.accent : th.edge}" opacity="${k < tr ? 1 : 0.3}"/>`;
+      s += `<rect x="${812 + k * 12}" y="${y - 7}" width="8" height="8" ` +
+        `fill="${k < tr ? th.accent : th.edge}" opacity="${k < tr ? 1 : 0.25}"/>`;
     }
   });
   if (debs.length) {
     const d = debs[0]! as keyof typeof L.debuffs;
-    s += t(576, 176, `${L.debuffs[d].name} · debuff`, 11, th.warn);
+    s += t(576, 186, `${title(L.debuffs[d].name)} · debuff`, TYPE.detail, th.warn);
   }
 
   // --- description window ---
@@ -195,12 +236,12 @@ export function renderCard(i: CardInput): Card {
   // taller and carry every ability at once (docs/04).
   s += motion.animate ? win(16, 336, 848, 68) : win(16, 316, 848, 88);
   if (motion.animate) {
-    top4.forEach((m, n) => {
+    top4.forEach(({ metric: m }, n) => {
       const key = ABILITY_OF[m]!;
       s += `<g opacity="0"><animate attributeName="opacity" values="1;0;0;0" dur="12s" begin="${n * 3}s" repeatCount="indefinite" calcMode="discrete"/>` +
         t(30, 360, L.abilities[key].effect, 12) +
         t(30, 378, `${L.ui.measures_prefix} ${L.abilities[key].measures}`, 11, th.edge) +
-        t(30, 394, `${L.ui.casts_this_campaign.replace('{n}', String(i.raw[m] ?? 0))} · ${L.ui.tier.replace('{n}', String(tier(i.p[m])))}`, 11, th.dim) +
+        t(30, 394, `${L.ui.casts_this_campaign.replace('{n}', String(i.raw[m] ?? 0))} · ${L.ui.tier.replace('{n}', String(tier(m)))}`, 11, th.dim) +
         `</g>`;
     });
   } else {
@@ -215,13 +256,13 @@ export function renderCard(i: CardInput): Card {
     // that silently runs its text into the next column, and test/fit.test.ts
     // now enforces it across all three locales.
     const COL_W = 410;
-    top4.forEach((m, n) => {
+    top4.forEach(({ metric: m }, n) => {
       const key = ABILITY_OF[m]!;
       const col = 30 + (n % 2) * COL_W;
       const row = 340 + Math.floor(n / 2) * 28;
       s += t(col, row, L.abilities[key].name, 11, th.ink);
       s += t(col, row + 12, `${L.ui.measures_prefix} ${L.abilities[key].measures}`, 9, th.edge);
-      s += t(col + 300, row, `${i.raw[m] ?? 0} · ${L.ui.tier.replace('{n}', String(tier(i.p[m])))}`, 9, th.dim);
+      s += t(col + 300, row, `${i.raw[m] ?? 0} · ${L.ui.tier.replace('{n}', String(tier(m)))}`, 9, th.dim);
     });
   }
   if (i.restricted > 0) {

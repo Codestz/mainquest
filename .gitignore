@@ -31,6 +31,10 @@ build/logins*.txt
 .serena/project.local.yml
 .agentry/
 
+# python bytecode from scripts/pixelate.py
+__pycache__/
+*.pyc
+
 # logs and OS noise
 *.log
 .DS_Store

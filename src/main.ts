@@ -51,6 +51,7 @@ async function main(): Promise<void> {
 
   const wantThemes = new Set(input('themes', 'dark,light').split(',').map((s) => s.trim()));
   const wantMotion = new Set(input('motion', 'animated,still').split(',').map((s) => s.trim()));
+  const wantCards = new Set(input('cards', 'status,abilities').split(',').map((s) => s.trim()));
 
   const client = new GitHubClient({ token, userAgent: 'mainquest-action' });
 
@@ -109,10 +110,15 @@ async function main(): Promise<void> {
     calendarTotal: profile.calendarTotal,
   });
 
+  // `motion` gates the status card only. The ability card has no animated
+  // variant to choose between, so applying the motion filter to it would let
+  // `motion: animated` delete it without ever saying so.
   const selected = all.filter((o) =>
-    wantThemes.has(o.theme) && wantMotion.has(o.animated ? 'animated' : 'still'));
+    wantThemes.has(o.theme) && wantCards.has(o.kind) &&
+    (o.kind !== 'status' || wantMotion.has(o.animated ? 'animated' : 'still')));
   if (selected.length === 0) {
-    fail(`No outputs selected. themes="${input('themes')}" motion="${input('motion')}" matched nothing.`);
+    fail(`No outputs selected. themes="${input('themes')}" motion="${input('motion')}" ` +
+      `cards="${input('cards')}" matched nothing.`);
   }
 
   mkdirSync(outDir, { recursive: true });

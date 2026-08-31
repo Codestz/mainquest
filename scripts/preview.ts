@@ -12,6 +12,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { FIXTURES } from '../src/fixtures.js';
 import { normalise } from '../src/normalise.js';
 import { renderCard } from '../src/render/card.js';
+import { renderAbilities, ABILITIES_H } from '../src/render/abilities.js';
 import { sigilCombinations } from '../src/render/sigil/index.js';
 
 const CAMPAIGN = 2026;
@@ -27,6 +28,15 @@ const cards = FIXTURES.map((f) => {
     calendarTotal: f.weeks.reduce((a, b) => a + b, 0) + f.restricted,
   });
   writeFileSync(`build/cards/${f.login}.svg`, card.svg);
+  // Both cards, every fixture: the pair has to be checked as a pair, because
+  // the failure worth catching is the two of them disagreeing.
+  const sheet = renderAbilities({
+    login: f.login, campaign: CAMPAIGN, p: normalise(f.raw), raw: f.raw,
+    weeks: f.weeks, restricted: f.restricted, accountAgeYears: f.accountAgeYears,
+    prsOpened: f.prsOpened, campaignDay: DAY,
+    calendarTotal: f.weeks.reduce((a, b) => a + b, 0) + f.restricted,
+  });
+  writeFileSync(`build/cards/${f.login}-abilities.svg`, sheet.svg);
   return { f, card };
 });
 
@@ -45,6 +55,7 @@ const page = `<!doctype html><meta charset="utf-8"><title>MainQuest — card pre
  set DAY=1 to see the January sky, DAY=360 for December</p>
 ${cards.map(({ f, card }) => `<figure>
  <img src="cards/${f.login}.svg" width="880" height="420" alt="${f.login}">
+ <img src="cards/${f.login}-abilities.svg" width="880" height="${ABILITIES_H}" alt="${f.login} abilities" style="margin-top:10px">
  <figcaption>${f.login} — ${card.klass} <i>· ${f.note} · charge: ${card.credit.id}</i></figcaption>
 </figure>`).join('\n')}`;
 
