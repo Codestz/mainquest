@@ -60,28 +60,8 @@ async function main(): Promise<void> {
     );
   }
 
-  /**
-   * Is this the workflow's own token rather than a PAT?
-   *
-   * `ghs_` is the documented prefix for a GitHub App installation token, which
-   * is what GITHUB_TOKEN is. The check is a heuristic and it is allowed to be:
-   * being wrong prints one caveat that did not need printing, which is the
-   * safe direction. Being wrong the other way would silently under-report
-   * someone's private work, which is not.
-   *
-   * It cannot be inferred from `restricted === 0` instead — plenty of people
-   * genuinely have no private contributions, and telling them their token is
-   * inadequate would be its own kind of wrong.
-   */
+  /** True when running on the workflow's own token rather than a PAT. */
   const ephemeral = !fixture && token.startsWith('ghs_');
-  if (ephemeral) {
-    console.log(
-      '::warning::Running with the workflow\'s GITHUB_TOKEN. Public activity ' +
-      'renders fine, but private contributions cannot be read with it, so the ' +
-      'card will report zero sealed activity and say so. Pass a fine-grained ' +
-      'PAT as github_token to include private work.',
-    );
-  }
 
   // A fixture carries its own login, so `username` is not merely optional in
   // fixture mode — it is ignored.
@@ -194,7 +174,6 @@ async function main(): Promise<void> {
     prsOpened: profile.prsOpened,
     campaignDay: profile.campaignDay,
     calendarTotal: profile.calendarTotal,
-    privateCounted: !ephemeral,
     ...(lang ? { lang } : {}),
   });
 
@@ -255,6 +234,30 @@ async function main(): Promise<void> {
   for (const o of selected) {
     process.stdout.write(`  ${join(outDir, o.file)}  ${(o.card.svg.length / 1024).toFixed(1)} KB\n`);
   }
+  /**
+   * Advice, in the log, and never on the card.
+   *
+   * The first version of this asserted on the ARTWORK that private work had
+   * not been counted, inferred from the token being a `ghs_` one. That was
+   * wrong twice over. GITHUB_TOKEN does return restrictedContributionsCount —
+   * verified against a real profile, same-repo and cross-repo — so the card
+   * printed "private work not counted" directly above "sealed activity: 156",
+   * contradicting itself on the same render.
+   *
+   * What remains true is narrower: when the count comes back zero on the
+   * default token, we cannot tell "none exists" from "not visible to us". That
+   * is a reason to tell the operator how to check, not a reason to put a claim
+   * on a card that thousands of people will read. The card asserts only what
+   * was measured.
+   */
+  if (ephemeral && profile.restricted === 0) {
+    process.stdout.write(
+      '::notice::No private contributions were read. If that is wrong, either ' +
+      "enable \"Include private contributions on my profile\" in your GitHub " +
+      'profile settings, or pass a fine-grained PAT as github_token.\n',
+    );
+  }
+
   if (!changed) {
     /**
      * GitHub disables scheduled workflows after 60 days without repository

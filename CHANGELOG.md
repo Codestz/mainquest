@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.0.1
+
+### Fixed
+
+**The card contradicted itself about private work.** A real render printed
+`sealed activity: 156` and `private work not counted` at the same time.
+
+The caveat was derived from the kind of credential in use — a `ghs_` prefix
+meaning the workflow's own GITHUB_TOKEN — on the assumption that such a token
+cannot read `restrictedContributionsCount`. Running the default path end to end
+against a real profile disproved the assumption: it returns the count, from the
+same repository and from a different one.
+
+No caveat may be derived from what kind of credential was used any more, only
+from the data that came back. `action.yml` and the README carried the same
+false claim and are corrected.
+
+What is still true is narrower, so it moved to the run log where advice belongs:
+when the count comes back zero on the default token, "none exists" and "not
+visible to us" are indistinguishable, and the operator is told how to check.
+The card asserts only what it measured.
+
 ## 1.0.0
 
 First public release.

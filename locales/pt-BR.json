@@ -141,7 +141,6 @@
     "no_debuffs": "sem penalidades",
     "caveat_reviews": "reviews: escassos na amostra",
     "caveat_merges": "merges: estimado por PRs abertos",
-    "caveat_private": "trabalho privado não contado (sem PAT)",
     "shape_bursty": "em rajadas",
     "shape_steady": "de forma constante",
     "shape_weekend": "fins de semana",

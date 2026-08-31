@@ -113,7 +113,6 @@ describe('localised UI strings fit their slots', () => {
       // Each caveat is now its own right-anchored line, never joined.
       ok(L.ui.caveat_reviews, 'card.caveat');
       ok(L.ui.caveat_merges, 'card.caveat');
-      ok(L.ui.caveat_private, 'card.caveat');
       ok(L.ui.no_debuffs, 'sheet.percentile');
     });
   }

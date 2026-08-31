@@ -1,6 +1,6 @@
 {
   "name": "mainquest",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "description": "Turns a GitHub profile into a 16-bit JRPG status screen.",
   "keywords": [

@@ -9,18 +9,19 @@ inputs:
   github_token:
     description: >-
       Optional. Defaults to the workflow's own GITHUB_TOKEN, which is enough to
-      render a card from PUBLIC activity — no secret to create, no setup.
+      render a card — no secret to create, no setup.
 
-      Supply a PAT only to have your PRIVATE work counted. GITHUB_TOKEN's scope
-      for user-level contribution queries does not return
-      restrictedContributionsCount, so with the default the card reports zero
-      sealed activity and says so on its face rather than quietly under-counting
-      you. If most of your work is private, that difference is the whole card.
+      It reads private CONTRIBUTION COUNTS too, provided your profile has
+      "Include private contributions on my profile" enabled, since that setting
+      is what makes the count readable at all. Verified against a real profile,
+      from both the same repository and a different one.
 
-      A fine-grained PAT with NO repository access and NO account permissions is
-      sufficient and is the safest option — contribution counts are an attribute
-      of the authenticated identity, not a resource, so there is no permission to
-      grant. A classic token with read:user also works and grants strictly more.
+      Pass a fine-grained PAT if that setting is off and you still want private
+      work counted. A PAT with NO repository access and NO account permissions
+      is sufficient and is the safest option — contribution counts are an
+      attribute of the authenticated identity, not a resource, so there is no
+      permission to grant. A classic token with read:user also works and grants
+      strictly more.
     required: false
     default: ${{ github.token }}
   username:

@@ -123,18 +123,23 @@ for. The ability card needs no such pair; it never animates.
 
 ### The token
 
-**You do not need one to start.** `github_token` defaults to the workflow's own
-`GITHUB_TOKEN`, and every public contribution renders correctly with it.
+**You do not need one.** `github_token` defaults to the workflow's own
+`GITHUB_TOKEN`, and that is enough to render the card.
 
-What it cannot read is `restrictedContributionsCount` — the count of your
-private work. So on the default the card reports zero sealed activity, and
-prints `private work not counted` on its face rather than quietly presenting a
-corporate developer as someone who did nothing this year. If most of your work
-is private, that difference is the whole card.
+It reads private contribution *counts* as well, as long as your profile has
+**Include private contributions on my profile** switched on — that setting is
+what makes the number readable in the first place. Verified against a real
+profile, from both the same repository and a different one.
 
-To include private work, **use a fine-grained PAT with no repository access and
-no account permissions.** That is not a shortcut: there is no permission to
-grant.
+This document used to claim the opposite: that `GITHUB_TOKEN` could not return
+`restrictedContributionsCount` and a PAT was required. Testing the default path
+end to end disproved it, and the card briefly printed `private work not
+counted` directly above `sealed activity: 156` as a result. The card now
+asserts only what it measured.
+
+If that profile setting is off and you still want private work counted, **use a
+fine-grained PAT with no repository access and no account permissions.** That is
+not a shortcut: there is no permission to grant.
 Contribution counts are an attribute of the authenticated identity rather than
 a resource, so nothing in the fine-grained permission list maps to them, and a
 token with everything set to "No access" returns them correctly. Verified

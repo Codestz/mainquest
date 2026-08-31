@@ -43,16 +43,6 @@ export interface CardInput {
   campaignDay: number;
   /** Contribution-calendar total, INCLUDING sealed days. Decides standing. */
   calendarTotal: number;
-  /**
-   * False when the run had no PAT, so `restricted` is 0 because it could not
-   * be read — not because there is none.
-   *
-   * The distinction is the whole card for a corporate developer. Rendering
-   * "0 sealed" for someone who is 95% private, with no note, is the same class
-   * of lie as drawing a berserker beside "unclassed": the artwork asserting
-   * something the data does not support.
-   */
-  privateCounted?: boolean;
   /** Viewer preference, not a per-user axis. Defaults to dark. */
   theme?: Theme['name'];
   /** en | es | pt-BR. Unknown values fall back to English rather than throw. */
@@ -341,9 +331,6 @@ export function renderCard(i: CardInput): Card {
   const caveats: string[] = [];
   if (isDegenerate('reviews')) caveats.push(L.ui.caveat_reviews);
   if (MERGES_IS_PROXY) caveats.push(L.ui.caveat_merges);
-  // Only when it actually matters: a profile with no private work loses
-  // nothing by the token's limits, so saying so would be noise.
-  if (i.privateCounted === false) caveats.push(L.ui.caveat_private);
 
   /**
    * The whole bottom-right column is ONE right-anchored stack.
