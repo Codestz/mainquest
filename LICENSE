@@ -19,22 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-NOTE ON BUNDLED ART
-
-This MIT licence covers the CODE. It does not cover the third-party artwork
-this project embeds, which carries its own terms:
-
-  data/charges.v1.json   192 icons from game-icons.net, CC BY 3.0.
-                         Attribution is REQUIRED and is not optional for
-                         redistribution. The contributors represented are
-                         listed in ATTRIBUTION.md.
-
-  data/sprites.v2.json   Sprites generated with Google Gemini and processed by
-                         scripts/pixelate.py. Every image carries an invisible
-                         SynthID watermark that cannot be removed.
-
-See ATTRIBUTION.md before redistributing, vendoring, or publishing anything
-built from this repository.

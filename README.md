@@ -238,6 +238,12 @@ rhythm is real), shows the sealed count, and says *"rhythm known, role not"*.
 
 Code: [MIT](LICENSE).
 
-Art is **not** MIT. The 192 heraldic charges come from
-[game-icons.net](https://game-icons.net) under **CC BY 3.0**, which requires
-attribution — see [`ATTRIBUTION.md`](ATTRIBUTION.md) before redistributing.
+Art is **not** MIT.
+
+- The 192 heraldic charges come from [game-icons.net](https://game-icons.net)
+  under **CC BY 3.0**. Attribution is required, and every rendered card carries
+  it in its own `<metadata>` block so it travels with the image.
+- The sprites were generated with Google Gemini and are SynthID watermarked.
+
+Read [`ATTRIBUTION.md`](ATTRIBUTION.md) before redistributing, vendoring, or
+publishing anything built from this repository.

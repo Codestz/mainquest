@@ -62,7 +62,7 @@ table whenever the charge table version changes.
 attribution to anyone outside this project.
 
 The thirteen class sprites and eight familiars in `data/sprites.v3.json` were
-generated for this project with an image model and then processed into real
+generated for this project with **Google Gemini** and then processed into real
 pixel art by `scripts/pixelate.py`:
 
 1. key out the magenta background → transparency
@@ -76,6 +76,11 @@ thirteen palettes, and the set stops looking like a single game.
 They ship as base64 PNG data URIs inside the JSON, because an SVG loaded
 through an `<img>` tag cannot fetch anything external.
 
+Every generated image carries an invisible **SynthID** watermark that cannot be
+removed. That is a property of the artwork, not a restriction this project
+adds, but anyone redistributing or re-processing the sprites should know it is
+there.
+
 ### If you swap them
 
 Should hand-drawn or third-party sprites ever replace these, the licence of the
@@ -87,3 +92,16 @@ Two rules that were established while sourcing candidates and still apply:
 
 - **Do not use Liberated Pixel Cup sets** — CC-BY-SA / GPL, copyleft.
 - **Check the LICENSE file inside each download.** Tags lie.
+
+## Scope of the MIT licence
+
+[`LICENSE`](LICENSE) covers the **code**. It does not cover the artwork this
+project embeds:
+
+| | |
+|---|---|
+| `data/charges.v1.json` | 192 icons from game-icons.net, **CC BY 3.0**. Attribution is required and is not optional for redistribution. |
+| `data/sprites.v3.json` | Generated with Google Gemini, processed by `scripts/pixelate.py`. No third-party licence; SynthID watermarked. |
+
+Read this file before redistributing, vendoring, or publishing anything built
+from this repository.
