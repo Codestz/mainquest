@@ -87,11 +87,7 @@ Then in your README:
 
 Embed either on its own. They are separate files precisely so you can.
 
-### Why a PAT and not `GITHUB_TOKEN`
-
-`GITHUB_TOKEN`'s scope for user-level contribution queries does not return
-`restrictedContributionsCount` — the count of your private work — so a card
-built with it silently shows zero sealed activity.
+### The token
 
 **Use a fine-grained PAT with no repository access and no account
 permissions.** That is not a shortcut: there is no permission to grant.
@@ -100,8 +96,12 @@ a resource, so nothing in the fine-grained permission list maps to them, and a
 token with everything set to "No access" returns them correctly. Verified
 against both queries this Action makes.
 
-If you prefer a classic token, `read:user` works — but it grants strictly more
-than this needs.
+`GITHUB_TOKEN` will not do. Its scope for user-level contribution queries does
+not return `restrictedContributionsCount` — the count of your private work — so
+a card built with it silently shows zero sealed activity.
+
+A classic token with `read:user` also works, but it grants strictly more than
+this needs.
 
 Fine-grained tokens expire (one year maximum). This runs on a schedule, so when
 it expires the card stops updating quietly. Set a reminder.
