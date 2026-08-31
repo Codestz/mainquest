@@ -70,8 +70,8 @@ one:
 2. Add `name` and `epithet` to **all three** locales.
 3. Add a sprite to `data/sprites.v2.json` (see below).
 4. Re-run the separability check — a new class that sits within noise of an
-   existing one makes both meaningless, and `docs/07#2` freezes a user's class
-   for a whole campaign, so it would freeze a coin toss.
+   existing one makes both meaningless, and a user's class is frozen for a
+   whole campaign, so it would freeze a coin toss.
 
 The bar: the closest archetype pair should stay below ~0.85 cosine, and the
 population's bottom-decile win margin above ~0.01.

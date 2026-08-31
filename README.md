@@ -158,20 +158,6 @@ not invent a class from whatever sliver happens to be public. It renders
 `sealed`, keeps the full terrain (the calendar counts private days, so your
 rhythm is real), shows the sealed count, and says *"rhythm known, role not"*.
 
-## Documentation
-
-| File | |
-|---|---|
-| [`VISION.md`](VISION.md) | Why this exists and what it refuses to be |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Setup, and the three rules that will break things |
-| [`docs/01-architecture.md`](docs/01-architecture.md) | Pipeline, determinism, layout |
-| [`docs/02-data-sources.md`](docs/02-data-sources.md) | Exact GraphQL fields, query costs, traps |
-| [`docs/03-classes-and-abilities.md`](docs/03-classes-and-abilities.md) | Classification, abilities, ranks |
-| [`docs/04-art-direction.md`](docs/04-art-direction.md) | 16-bit rules, animation budget, curation |
-| [`docs/05-i18n.md`](docs/05-i18n.md) | Three languages and the SVG text-fitting problem |
-| [`docs/06-roadmap.md`](docs/06-roadmap.md) | What is built, what is next, what is cut |
-| [`docs/07-open-questions.md`](docs/07-open-questions.md) | The hard-to-reverse decisions and their costs |
-
 ## Status
 
 **v1.0.0.** The Action works end to end: fetch, classify, render, commit.
@@ -185,7 +171,7 @@ Two things are honest about their limits, on the card and here:
   still uses PRs-opened, because the bulk sampler skips the Tier 1 search.
 
 Also known: sprite proportions drift between classes, and cards are ~30 KB
-against the 25 KB target in `docs/04` (40 KB hard limit).
+against a 25 KB target (40 KB hard limit).
 
 See [`CHANGELOG.md`](CHANGELOG.md).
 

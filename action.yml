@@ -30,7 +30,7 @@ inputs:
     required: false
     default: 'animated,still'
   campaign:
-    description: 'Year to render. Defaults to the current calendar year. The campaign is the calendar year (docs/07#1).'
+    description: 'Year to render. Defaults to the current calendar year. The campaign is the calendar year.'
     required: false
 
 outputs:
@@ -44,7 +44,7 @@ outputs:
       deterministic, so this is false whenever the profile has not moved.
       Do NOT use it to skip every commit: GitHub disables scheduled workflows
       after 60 days of repository inactivity, and a profile repo is exactly the
-      kind that goes quiet. Commit at least weekly regardless (docs/06).
+      kind that goes quiet. Commit at least weekly regardless.
 
 runs:
   using: 'node20'

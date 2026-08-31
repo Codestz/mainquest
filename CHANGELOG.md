@@ -19,8 +19,8 @@ the positive orthant, so raw cosine is inflated by a baseline every user shares
 everything" sit at nearly the same angle despite being opposite people.
 Measured over 165 real accounts, centring took the closest archetype pair from
 0.945 to 0.786 and the bottom-decile win margin from 0.005 to 0.015. The 0.005
-mattered: `docs/07#2` freezes a class for a whole campaign, and it would have
-frozen a coin toss.
+mattered: a class is frozen for a whole campaign, so it would have frozen a
+coin toss.
 
 **A permanent heraldic sigil.** Shield × tincture × ordinary × charge × cadency,
 8,847,360 combinations, drawn from `identitySeed(login)` so it never changes
@@ -31,9 +31,9 @@ campaign to campaign. 192 charges curated by eye at 28px from 4,239 candidates.
 the shiny Pokémon, and the naming is material (`gilded`, never `legendary`).
 
 **Three standings.** `classed`, `sealed` (mostly private work: rhythm known,
-role not), `unclassed` (nothing to go on). A corporate profile behind SSO is the
-case `docs/02` predicted, and rendering it as `healer` off a single public
-review was worse than rendering it empty.
+role not), `unclassed` (nothing to go on). A corporate profile behind SSO renders as
+`sealed`; classifying it `healer` off a single public review was worse than
+rendering it empty.
 
 **Four outputs**, dark and light, animated and still. Rendering is
 deterministic, so an unchanged profile produces byte-identical SVGs.
@@ -45,9 +45,9 @@ deterministic, so an unchanged profile produces byte-identical SVGs.
 - `merges` is real for a rendered card, but the *scale* it is scored against
   still uses PRs-opened, because the bulk sampler skips the Tier 1 search.
 - Sprite proportions drift between classes.
-- Cards are ~30 KB against the 25 KB target in `docs/04` (40 KB hard limit).
+- Cards are ~30 KB against a 25 KB target (40 KB hard limit).
 
 ### Not in 1.0
 
 Duels, the hosted endpoint, vertical video, comment-based abilities, peak-hour
-detection, and diff-size abilities — all explicitly cut in `docs/06`.
+detection and diff-size abilities are all explicitly out of scope for 1.0.
