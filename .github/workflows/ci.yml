@@ -165,14 +165,23 @@ jobs:
           motion: animated
           themes: dark
 
-      - name: It must produce a real card, and admit what it could not read
+      - name: It must produce a real card and claim nothing it did not measure
         run: |
           set -euo pipefail
           test -s token-out/card-dark.svg
           grep -q '<svg' token-out/card-dark.svg
-          # The honesty half: with no PAT the card must carry the caveat.
-          grep -q 'private work not counted' token-out/card-dark.svg \
-            || { echo "::error::no private-work caveat on a GITHUB_TOKEN render"; exit 1; }
-          # And it must have classified a real person, not fallen back to empty.
+          # It must have classified a real person, not fallen back to empty.
           test -n "${{ steps.card.outputs.character_class }}"
+
+          # The regression this job exists for.
+          #
+          # A caveat used to be derived from the credential type — a `ghs_`
+          # token was assumed unable to read restrictedContributionsCount — and
+          # a real card printed "sealed activity: 156" directly above "private
+          # work not counted". No claim about what a token could or could not
+          # see may appear on the artwork again.
+          if grep -q 'not counted' token-out/card-dark.svg; then
+            echo "::error::the card is claiming something it did not measure"
+            exit 1
+          fi
           echo "class=${{ steps.card.outputs.character_class }} rank=${{ steps.card.outputs.rank }}"
