@@ -32,7 +32,8 @@ export type ClassName =
   | 'mage' | 'wanderer'
   | 'tracker' | 'necromancer';
 
-// Hand-authored archetype vectors in the same 6-d space.
+// Hand-authored archetype vectors in the same 8-d space as a user's
+// percentiles -- six volume metrics plus the two shape metrics.
 // Adding a class = one entry here. No threshold chains.
 const ARCHETYPES: Record<ClassName, Percentiles> = {
   //             commits reviews merges streak repos issues burst weekend
@@ -76,7 +77,7 @@ function cosine(a: Percentiles, b: Percentiles): number {
   //
   // The p10 number is the one that matters: at 0.005 the bottom decile's class
   // was decided by noise a single commit would flip, which would have made the
-  // campaign-long class freeze (docs/07#2) freeze a coin toss.
+  // campaign-long class freeze lock in a coin toss.
   const ma = KEYS.reduce((s, k) => s + a[k], 0) / KEYS.length;
   const mb = KEYS.reduce((s, k) => s + b[k], 0) / KEYS.length;
   let dot = 0, na = 0, nb = 0;
@@ -106,7 +107,7 @@ export function classify(p: Percentiles): [ClassName, ClassName] {
  * That labelled the empty-account fixture `berserker`, the extreme
  * high-volume class, which is the exact opposite of what it is.
  *
- * The empty state is the one docs/01 says everyone forgets. It is not a class
+ * The empty state is the one everyone forgets. It is not a class
  * and the card must not invent one for it.
  */
 export function hasSignal(p: Percentiles): boolean {
@@ -134,7 +135,7 @@ export interface Visibility {
 /**
  * What the card is entitled to claim.
  *
- * `restrictedContributionsCount` is a bare number: docs/02 notes it tells you
+ * `restrictedContributionsCount` is a bare number: it tells you
  * how many private contributions there were but not what type. So for someone
  * whose work is mostly behind SSO, every TYPED metric — commits, reviews,
  * merges, repos, issues — describes only the sliver that happens to be public,
@@ -142,7 +143,7 @@ export interface Visibility {
  *
  * A real case: 1,395 sealed against 3 commits and 1 review. The card called
  * that account `healer`, on the strength of one review — 0.3% of the work it
- * actually did. `docs/02` predicted exactly this ("the card can come out nearly
+ * actually did. This was predicted before it was seen ("the card can come out nearly
  * empty and they'll assume it's broken"); it is worse than empty, because it is
  * confidently wrong.
  *
@@ -175,7 +176,7 @@ export function classMargin(p: Percentiles): number {
 }
 
 /** Hysteresis. Without this the class flips week to week and the identity is
- *  worthless. Mechanism decided in docs/07#2: provisional under 100 campaign
+ *  worthless. The mechanism: provisional under 100 campaign
  *  contributions, frozen above it, and this margin check runs only at campaign
  *  rollover. The caller owns the phase; this function owns the margin. */
 export function classifyStable(

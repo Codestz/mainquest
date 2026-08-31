@@ -21,7 +21,7 @@ describe('toolchain smoke', () => {
     expect(debuffs({ ...heavyReviewer, commits: 0.9, reviews: 0.05 })).toContain('lone_wolf');
   });
 
-  // Determinism rule, docs/01: same input -> byte-identical output.
+  // Determinism rule: same input -> byte-identical output.
   it('derives a stable seed and stream per login+campaign', () => {
     const a = campaignSeed('codestz', 2026);
     expect(campaignSeed('codestz', 2026)).toBe(a);

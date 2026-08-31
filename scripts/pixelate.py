@@ -4,7 +4,7 @@ AI output -> real pixel art.
 Diffusion models do not produce pixel art. They produce pixel-art-STYLED
 illustration: a soft grid, anti-aliased edges, and hundreds of near-duplicate
 colours. Dropped straight onto the card at image-rendering:pixelated that reads
-as mush, which is the whole reason docs/04 warned against procedural art.
+as mush, which is the whole reason procedural art was ruled out.
 
 This makes it real:
   1. key out the magenta background          -> transparency
@@ -186,7 +186,7 @@ def sheet(frames):
     """
     Lay frames side by side into one image.
 
-    A two-frame idle is animated with the clipPath trick (docs/04): both frames
+    A two-frame idle is animated with the clipPath trick: both frames
     in one <image>, clipped to one frame's width, translateX stepping between
     them with calcMode="discrete". That needs a single sheet, not two files —
     and one <image> plus one <animateTransform> costs a single element against

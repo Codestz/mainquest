@@ -1,7 +1,7 @@
 /**
  * The GraphQL documents, and only those.
  *
- * Tier 0 (docs/02) carries the whole card for ~1 point against a 5,000/hour
+ * Tier 0 carries the whole card for ~1 point against a 5,000/hour
  * budget. Tier 1 is one extra `search` for PRs actually merged, which is a
  * different number from PRs opened — the gap between them is the entire point
  * of `close_the_loop` and the `revolving_door` debuff.
@@ -54,7 +54,7 @@ export interface ProfileResponse {
 }
 
 /**
- * PRs actually merged in the window (docs/02 Tier 1).
+ * PRs actually merged in the window (Tier 1).
  *
  * `search` aliases, so a batch of these costs 1 point — but for a single card
  * it is simply one more node in one more request.

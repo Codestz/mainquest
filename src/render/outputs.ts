@@ -1,7 +1,7 @@
 /**
  * The files a profile ships as.
  *
- * README documents `<picture>` with a dark/light pair, and docs/06 requires a
+ * README documents `<picture>` with a dark/light pair, and there has to be a
  * no-motion variant. One renderer produces all of them: theme is a value and
  * motion is a mode, so nothing here is a second implementation.
  *
@@ -47,7 +47,7 @@ const VARIANTS: ReadonlyArray<{ theme: Theme['name']; animated: boolean }> = [
 /**
  * Render every variant from one input.
  *
- * Deliberately not parameterised by "which variants": docs/06 lists four
+ * Deliberately not parameterised by "which variants": there are four
  * outputs and the README's `<picture>` block breaks if any is missing. A
  * partial set is the failure mode worth preventing, not a feature.
  */

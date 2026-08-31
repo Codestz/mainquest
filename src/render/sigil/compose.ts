@@ -48,7 +48,7 @@ export function composeSigil(login: string, campaign: number, size = 44): Sigil 
   let svg = `<svg viewBox="0 0 100 116" width="${size}" height="${Math.round(size * 1.16)}">`;
   svg += `<defs><clipPath id="${clip}"><path d="${shield}"/></clipPath>`;
   if (flourish === 'shiny') {
-    // A slow diagonal sweep. Small and cheap: docs/04's animation budget says
+    // A slow diagonal sweep. Small and cheap: the animation budget says
     // everything that loops forever must be.
     svg += `<linearGradient id="${glint}" x1="0" y1="0" x2="1" y2="1">` +
       `<stop offset="0%" stop-color="#FFFFFF" stop-opacity="0"/>` +

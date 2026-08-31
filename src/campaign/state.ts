@@ -1,7 +1,7 @@
 /**
  * The campaign state file.
  *
- * docs/07#2 decided class stability as freeze-after-qualification, which needs
+ * Class stability is freeze-after-qualification, which needs
  * exactly one piece of persistence. This is it, and it is deliberately a small
  * JSON file committed beside the SVGs — no backend, no database.
  *
@@ -21,7 +21,7 @@
 
 import { classifyStable, isClassName, type ClassName, type Percentiles } from '../derive.js';
 
-/** Contributions needed before the class stops moving (docs/07#2). */
+/** Contributions needed before the class stops moving. */
 export const QUALIFYING_CONTRIBUTIONS = 100;
 
 export interface CampaignState {
@@ -47,7 +47,7 @@ export interface Resolution {
  * badly, or left over from an older version. Every field is therefore checked
  * rather than trusted: an unknown class name indexed blindly into the archetype
  * table yields a NaN cosine and silently flips the class, which is precisely
- * the bug docs/07#2 warns about.
+ * the bug this validation exists to prevent.
  */
 export function parseState(raw: string | null): CampaignState | null {
   if (!raw) return null;

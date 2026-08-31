@@ -19,7 +19,7 @@ const STOPS = [10, 25, 50, 75, 90, 99] as const;
 
 /**
  * `merges` is not in the sampled table: it needs one `search(is:merged)` call
- * per user (docs/02 Tier 1) and search is rate-limited separately at 30/min.
+ * per user (the Tier 1 search) and search is rate-limited separately at 30/min.
  * Until that pass runs, PRs *opened* stands in for PRs *merged*.
  *
  * This is a real distortion, not a rounding error — `close_the_loop` and the

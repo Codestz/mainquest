@@ -1,6 +1,6 @@
 /**
  * Curation model: which dimensions may be multiplied freely, and which must be
- * hand-reviewed. See docs/04 — curate what can clash, multiply what cannot.
+ * hand-reviewed. The rule: curate what can clash, multiply what cannot.
  */
 import type { FrozenTable } from './tables.js';
 

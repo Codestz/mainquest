@@ -19,10 +19,10 @@ export const FAMILIARS = Object.keys(FAMILIAR_TABLE) as [string, ...string[]];
  *
  * `spriteBase` is data (your class); the `familiar` beside it is seed, drawn
  * from the PERMANENT identity lane — so your companion is yours for as long as
- * the login exists, the same rule as the crest (docs/07#7).
+ * the login exists, the same rule as the crest.
  *
  * Both are base64 PNGs inlined as data URIs: an SVG in an <img> cannot load
- * anything external (docs/04). `image-rendering: pixelated` is mandatory — a
+ * anything external. `image-rendering: pixelated` is mandatory — a
  * 40px sprite scaled up without it is blurred to mush.
  */
 export function sprite(

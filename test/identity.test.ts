@@ -19,7 +19,7 @@ describe('seedPolicy — the ornament/measurement boundary', () => {
     }
   });
 
-  it('keeps window chrome identical for every user (docs/04)', () => {
+  it('keeps window chrome identical for every user', () => {
     expect(policy.windowChrome).toBe('fixed');
   });
 

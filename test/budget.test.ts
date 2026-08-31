@@ -9,7 +9,7 @@ import { STILL, type Theme } from '../src/render/theme.js';
 import { readWeather } from '../src/render/scene/weather.js';
 
 /**
- * The two budgets docs/04 sets, enforced instead of merely written down.
+ * The two budgets, enforced instead of merely written down.
  *
  * These exist because both were quietly blown by code that looked correct in
  * isolation:

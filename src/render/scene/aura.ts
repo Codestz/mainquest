@@ -8,7 +8,7 @@
  *
  * Both are derived, never seeded. Ambience is a function of class, which is a
  * function of the contribution shape; the aura is a function of rank. Neither
- * is ornament, so neither draws from the identity lanes (docs/07#7).
+ * is ornament, so neither draws from the identity lanes.
  */
 
 import type { ClassName } from '../../derive.js';

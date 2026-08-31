@@ -1,5 +1,5 @@
 /**
- * The fixture set docs/01 requires for snapshot tests. The preview renders the
+ * The fixture set the snapshot tests require. The preview renders the
  * same five, because the cases that break layout are the ones nobody looks at:
  * the empty account and the mostly-private one.
  */

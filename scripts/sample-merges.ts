@@ -5,10 +5,10 @@
  *
  * `totalPullRequestContributions` counts PRs **opened**, not merged, and the
  * gap between the two is the entire point of `close_the_loop` and the
- * `revolving_door` debuff (docs/02 Tier 1). Until this runs, PRs-opened stands
+ * `revolving_door` debuff (the Tier 1 search). Until this runs, PRs-opened stands
  * in for PRs-merged, which flatters everyone.
  *
- * docs/02 assumed one `search` call per user, and REST search is rate-limited
+ * The original plan assumed one `search` call per user, and REST search is rate-limited
  * separately at 30/minute — hours for a few thousand users, which is why the
  * first pass skipped it. It turns out **search aliases**: 50 `search(type:ISSUE)`
  * nodes in one GraphQL query cost 1 point, measured. A thousand users is 20

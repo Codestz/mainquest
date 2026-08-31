@@ -32,7 +32,7 @@ export const AXES = [
   'skyBand',          // campaign progress: Jan dawn -> Dec night
   'statBars',         // cmt / rev fill
   'abilityTiers',     // I / II / III pips
-  'windowChrome',     // must stay identical across ALL users (docs/04)
+  'windowChrome',     // must stay identical across ALL users
 ] as const;
 
 export type Axis = (typeof AXES)[number];

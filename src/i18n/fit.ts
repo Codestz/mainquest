@@ -1,7 +1,6 @@
 /**
  * SVG has no text wrapping. An overflowing string just runs off the edge,
  * silently. Monospace makes width computable at build time — use it.
- * See docs/05-i18n.md.
  */
 
 const CHAR_RATIO = 0.6;  // ui-monospace advance width, approx

@@ -5,7 +5,7 @@
  * light and still variants are possible without a second renderer: the layout
  * asks the theme for a colour rather than importing one.
  *
- * Within a theme the chrome is identical for every user — docs/04's
+ * Within a theme the chrome is identical for every user — a
  * non-negotiable rule, and what makes the set read as one game. The theme axis
  * is the viewer's preference, which is a different thing entirely from the
  * per-user seeding the identity layer does.
@@ -25,7 +25,7 @@ export interface Theme {
   row: string;
   /** Debuff text — the honest half (VISION), so it must stay legible. */
   warn: string;
-  /** Four seasonal sky palettes, top -> horizon (docs/07#3). */
+  /** Four seasonal sky palettes, top -> horizon. */
   seasons: ReadonlyArray<readonly [string, string, string]>;
   /** The generated horizon ridge. */
   mountain: string;
@@ -45,7 +45,7 @@ export const DARK: Theme = {
     ['#2A2350', '#5A3E6F', '#B8705E'], // Q1  cold dawn
     ['#1E4E7A', '#3F7FA8', '#7FB8CE'], // Q2  clear day
     ['#2B2350', '#6B3A5C', '#C4703F'], // Q3  dusk
-    ['#141B4D', '#1E2A6B', '#34367F'], // Q4  deep night (docs/04 reference)
+    ['#141B4D', '#1E2A6B', '#34367F'], // Q4  deep night (the reference palette)
   ],
   mountain: '#2B2258',
   terrain: ['#1B3320', '#2A5A32', '#4E9E3A', '#7FD152'],
@@ -153,7 +153,7 @@ export const title = (s: string): string =>
 /**
  * Classic JRPG menu chrome.
  *
- * Square corners, double border, identical for every user (docs/04). The first
+ * Square corners, double border, identical for every user. The first
  * version was exactly that and no more, which read as a plain rectangle rather
  * than a menu. Three cheap additions fix it without leaving the genre:
  *
@@ -200,8 +200,8 @@ export const window = (
 /**
  * Whether this render may animate.
  *
- * The still variant is not "the animated one with the motion stripped": docs/04
- * says it lists every ability at once, because there is no cursor to cycle
+ * The still variant is not "the animated one with the motion stripped":
+ * it lists every ability at once, because there is no cursor to cycle
  * through them. Motion is a rendering mode, not a post-process.
  */
 export interface Motion {

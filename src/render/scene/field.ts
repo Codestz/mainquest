@@ -19,7 +19,7 @@
 /**
  * Integer LCG rather than `Math.sin`-hashing.
  *
- * The card is required to be byte-identical for the same input (docs/01), and
+ * The card is required to be byte-identical for the same input, and
  * that has to hold across platforms. Integer arithmetic is exactly specified;
  * the last bits of a transcendental are not.
  */

@@ -19,7 +19,7 @@ describe('campaign state — the file is untrusted input', () => {
   it('rejects a class name that is not a class', () => {
     // Committed to the user's own repo, so it can be hand-edited or badly
     // merged. An unknown name indexed blindly into ARCHETYPES yields a NaN
-    // cosine and silently flips the class (docs/07#2).
+    // cosine and silently flips the class.
     expect(parseState('{"campaign":2026,"class":"paladin","seal":"X"}')).toBeNull();
   });
 
@@ -36,7 +36,7 @@ describe('campaign state — the file is untrusted input', () => {
   });
 });
 
-describe('freeze after qualification (docs/07#2)', () => {
+describe('freeze after qualification', () => {
   it('stays provisional below the threshold', () => {
     const r = resolve({ totalContributions: QUALIFYING_CONTRIBUTIONS - 1 });
     expect(r.locked).toBe(false);

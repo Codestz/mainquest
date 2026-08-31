@@ -86,7 +86,7 @@ async function main(): Promise<void> {
   const rankSlug = rank(profile.raw.reviews, profile.prsOpened, profile.accountAgeYears);
   const p = normalise(profile.raw);
   /**
-   * What the card is entitled to claim (docs/07#7, and the `sealed` standing).
+   * What the card is entitled to claim (the axis policy, and the `sealed` standing).
    *
    * The card already declines to name a class when the work is mostly private.
    * The Action has to agree: reporting `character_class=healer` for an account
@@ -186,7 +186,7 @@ async function main(): Promise<void> {
      * GitHub disables scheduled workflows after 60 days without repository
      * activity, and a profile repo is exactly the kind that goes quiet. Skipping
      * the commit whenever nothing changed will therefore silently kill the
-     * schedule — docs/06 flags this and says to commit at least weekly anyway.
+     * schedule — so commit at least weekly anyway.
      * The `changed` output exists to inform that decision, not to make it.
      */
     process.stdout.write(

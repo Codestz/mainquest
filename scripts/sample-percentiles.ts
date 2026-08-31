@@ -565,7 +565,7 @@ async function main(): Promise<void> {
     frameNote: FRAME === 'repos'
       ? 'Size-biased on purpose: contributing to more repos means more chances to be drawn. This over-represents active developers, which is the population that installs a character sheet — but it is a bias, and this is not "the average developer".'
       : 'The floor is deliberate. Unconditioned, a uniform account sample is ~90% dormant and would place every real user of this card at p99 on every metric.',
-    caveat: 'Public activity only. `merges` is not sampled here — it needs one search call per user (see docs/02 Tier 1).',
+    caveat: 'Public activity only. `merges` is not sampled here — it needs one search call per user (the Tier 1 search).',
     metrics: Object.fromEntries(
       METRICS.map((m) => [m, percentiles(active.map((r) => r[m]))]),
     ),

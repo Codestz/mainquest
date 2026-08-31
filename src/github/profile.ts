@@ -20,7 +20,7 @@ export interface Profile {
   raw: RawMetrics;
   /** 52-ish weekly totals: the terrain and the generated horizon. */
   weeks: number[];
-  /** Private contributions. Surfaced, never silently ignored (docs/02). */
+  /** Private contributions. Surfaced, never silently ignored. */
   restricted: number;
   accountAgeYears: number;
   prsOpened: number;

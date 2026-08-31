@@ -3,7 +3,7 @@
  *
  *   npm run preview
  *
- * The five fixtures are the ones docs/01 requires for snapshot tests -- heavy
+ * The five fixtures are the ones the snapshot tests require -- heavy
  * committer, heavy reviewer, brand-new, mostly-private, zero-activity -- so the
  * preview and the test suite look at exactly the same inputs. The empty state
  * is the one everyone forgets, so it is always on screen.

@@ -72,7 +72,7 @@ export function starScatter(th: Theme, animate: boolean): string {
   /**
    * Only a THIRD of the stars twinkle.
    *
-   * docs/04 caps the card at 40 animated elements, and 22 twinkling stars
+   * The card is capped at 40 animated elements, and 22 twinkling stars
    * spent more than half that budget on the least meaningful thing on the
    * canvas. A sky where every star pulses also reads as noise — real ones
    * mostly sit still. The rest are drawn as one static path, which costs a

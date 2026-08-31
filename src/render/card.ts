@@ -1,11 +1,11 @@
 /**
  * The card: layout and orchestration only.
  *
- * Layout rule (docs/04): ONE frame. The scene fills the canvas and the windows
+ * Layout rule: ONE frame. The scene fills the canvas and the windows
  * float over it. The contribution grid is the ground the character stands on,
  * never a chart at the bottom.
  *
- * Determinism (docs/01): no timestamps, integer coordinates, same input ->
+ * Determinism: no timestamps, integer coordinates, same input ->
  * byte-identical output.
  *
  * Everything this file draws, it delegates. It knows WHERE things go, not how
@@ -49,7 +49,7 @@ export interface CardInput {
   lang?: Lang;
   /**
    * Still cards list every ability at once, because there is no cursor to
-   * cycle them (docs/04). Motion is a rendering mode, not a post-process.
+   * cycle them. Motion is a rendering mode, not a post-process.
    */
   motion?: Motion;
 }
@@ -111,7 +111,7 @@ export function renderCard(i: CardInput): Card {
     `</metadata>`;
 
   // --- sky: NOT drifted -----------------------------------------------------
-  // skyBand is 'fixed' (docs/07#7): every card rendered on the same day gets
+  // skyBand is 'fixed': every card rendered on the same day gets
   // the same sky. Wrapping the sky in the per-user hue-rotate broke that -- two
   // day-242 cards came out red and orange, and "we are in the same season"
   // stopped being readable. Drift belongs to the ground, not the world.
@@ -237,7 +237,7 @@ export function renderCard(i: CardInput): Card {
 
   // --- description window ---
   // The still card has no cursor cycling, so its description window can be
-  // taller and carry every ability at once (docs/04).
+  // taller and carry every ability at once.
   s += motion.animate ? win(16, 336, 848, 68) : win(16, 316, 848, 88);
   if (motion.animate) {
     top4.forEach(({ metric: m }, n) => {
@@ -250,8 +250,8 @@ export function renderCard(i: CardInput): Card {
     });
   } else {
     // Nothing cycles, so the description window cannot show one ability's
-    // prose. It shows the `mide:` line for ALL of them instead — the line
-    // docs/03 calls load-bearing, because someone who ignores the RPG framing
+    // prose. It shows the `mide:` line for ALL of them instead — the
+    // load-bearing line, because someone who ignores the RPG framing
     // reads only those and still gets a stats card.
     // Two columns, two rows. Four columns cannot hold the `measures:` line in
     // ANY locale: the longest is 46 chars in Spanish (`sabbath`), which needs

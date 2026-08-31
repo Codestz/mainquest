@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fits } from '../src/i18n/fit.js';
 
 /**
- * docs/05: SVG has no text wrapping. A string that overflows its window just
+ * SVG has no text wrapping. A string that overflows its window just
  * runs off the edge, SILENTLY — and Portuguese and Spanish run 20-30% longer
  * than English. This is the test that turns that into a build error.
  *
