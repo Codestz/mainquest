@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0
 
 ### Added
 
@@ -71,6 +71,15 @@ theme (including a synthetic went-quiet profile, the only input that reaches
 the snow branch); every declared scene axis actually reaching the canvas; the
 two cards agreeing; and the ability card's three text slots fitting in all
 three locales.
+
+## 1.0.1
+
+### Fixed
+
+**Target `node24`.** Node 20 is removed from Actions runners on 2026-09-23,
+and runners already force node20 actions onto 24 with a deprecation warning.
+The bundle had only ever been tested on 24. Found by a real runner, not by a
+test — nothing local exercises `runs.using`.
 
 ## 1.0.0
 
