@@ -21,8 +21,16 @@ import { renderAll } from '../src/render/outputs.js';
 const FIXTURE = 'heavy-committer';
 const CAMPAIGN = 2026;
 const OUT = 'assets';
-/** Only the four the README embeds. The rest would be committed dead weight. */
-const WANTED = new Set(['card-dark.svg', 'card-light.svg', 'abilities-dark.svg', 'abilities-light.svg']);
+/**
+ * The six the README embeds. The still pair is not dead weight: the README's
+ * <picture> block serves it to `prefers-reduced-motion`, and documentation
+ * that shows a pattern it does not itself use is documentation nobody trusts.
+ */
+const WANTED = new Set([
+  'card-dark.svg', 'card-light.svg',
+  'card-dark-still.svg', 'card-light-still.svg',
+  'abilities-dark.svg', 'abilities-light.svg',
+]);
 
 const f = FIXTURES.find((x) => x.login === FIXTURE);
 if (!f) throw new Error(`fixture ${FIXTURE} not found`);

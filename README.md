@@ -7,6 +7,8 @@
 ---
 
 <picture>
+  <source media="(prefers-color-scheme: dark) and (prefers-reduced-motion: reduce)" srcset="./assets/sample-card-dark-still.svg"/>
+  <source media="(prefers-color-scheme: light) and (prefers-reduced-motion: reduce)" srcset="./assets/sample-card-light-still.svg"/>
   <source media="(prefers-color-scheme: dark)" srcset="./assets/sample-card-dark.svg"/>
   <source media="(prefers-color-scheme: light)" srcset="./assets/sample-card-light.svg"/>
   <img width="880" src="./assets/sample-card-dark.svg" alt="A MainQuest status card: a pixel-art berserker standing on a year of contributions, with a heraldic sigil, four abilities and a debuff"/>
@@ -74,7 +76,6 @@ jobs:
 
       - uses: Codestz/mainquest@v1
         with:
-          github_token: ${{ secrets.MAINQUEST_PAT }}
           username: ${{ github.repository_owner }}
           outputs: dist/
           cards: status,abilities
@@ -83,13 +84,22 @@ jobs:
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'chore: update mainquest card'
-          file_pattern: 'dist/*.svg'
+          # Not '*.svg'. mainquest.state.json is what freezes your class for
+          # the campaign; leave it uncommitted and the class is recomputed from
+          # scratch every run, which is the drift the freeze exists to stop.
+          file_pattern: 'dist/*'
 ```
+
+That is the whole setup — **no secret to create.** `github_token` defaults to
+the workflow's own `GITHUB_TOKEN`, which is enough for public activity. Add a
+PAT only if you want private work counted; see [the token](#the-token).
 
 Then in your README:
 
 ```markdown
 <picture>
+  <source media="(prefers-color-scheme: dark) and (prefers-reduced-motion: reduce)"  srcset="dist/card-dark-still.svg">
+  <source media="(prefers-color-scheme: light) and (prefers-reduced-motion: reduce)" srcset="dist/card-light-still.svg">
   <source media="(prefers-color-scheme: dark)"  srcset="dist/card-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="dist/card-light.svg">
   <img alt="MainQuest" src="dist/card-dark.svg">
@@ -104,10 +114,27 @@ Then in your README:
 
 Embed either on its own. They are separate files precisely so you can.
 
+**The first two sources are not decoration.** A `<picture>` takes the first
+source whose media query matches, so a reader who has asked their system for
+reduced motion gets the still card — the one that lists every ability at once
+instead of cycling them — without having to know it exists. An animation that
+loops forever in someone's README is exactly the kind of thing that setting is
+for. The ability card needs no such pair; it never animates.
+
 ### The token
 
-**Use a fine-grained PAT with no repository access and no account
-permissions.** That is not a shortcut: there is no permission to grant.
+**You do not need one to start.** `github_token` defaults to the workflow's own
+`GITHUB_TOKEN`, and every public contribution renders correctly with it.
+
+What it cannot read is `restrictedContributionsCount` — the count of your
+private work. So on the default the card reports zero sealed activity, and
+prints `private work not counted` on its face rather than quietly presenting a
+corporate developer as someone who did nothing this year. If most of your work
+is private, that difference is the whole card.
+
+To include private work, **use a fine-grained PAT with no repository access and
+no account permissions.** That is not a shortcut: there is no permission to
+grant.
 Contribution counts are an attribute of the authenticated identity rather than
 a resource, so nothing in the fine-grained permission list maps to them, and a
 token with everything set to "No access" returns them correctly. Verified

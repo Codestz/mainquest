@@ -220,3 +220,45 @@ describe('an untrained ability claims nothing', () => {
     }
   });
 });
+
+/**
+ * The card has to admit what the token could not read.
+ *
+ * `github_token` now defaults to the workflow's own GITHUB_TOKEN so the Action
+ * installs without a secret. That token cannot read
+ * `restrictedContributionsCount`, so `restricted` arrives as 0 — indistinguishable,
+ * on its face, from someone who genuinely has no private work. Rendering the
+ * second story for the first person is the failure `mostly-private` exists to
+ * catch, so the card carries a caveat instead.
+ */
+describe('private-work caveat', () => {
+  const base = (privateCounted?: boolean) => {
+    const f = FIXTURES.find((x) => x.login === 'mostly-private')!;
+    return {
+      login: f.login, campaign: 2026, p: normalise(f.raw), raw: f.raw,
+      weeks: f.weeks, restricted: 0, accountAgeYears: f.accountAgeYears,
+      prsOpened: f.prsOpened, campaignDay: 242,
+      calendarTotal: f.weeks.reduce((a: number, b: number) => a + b, 0),
+      ...(privateCounted === undefined ? {} : { privateCounted }),
+    };
+  };
+
+  it('says so when private work could not be read', () => {
+    expect(renderCard(base(false)).svg).toContain('private work not counted');
+  });
+
+  it('stays silent when a PAT was used', () => {
+    expect(renderCard(base(true)).svg).not.toContain('private work not counted');
+  });
+
+  it('stays silent by default, so a PAT run is not accused of hiding anything', () => {
+    // Absent means "not told", and the safe reading of "not told" is the one
+    // that does not print a caveat about a token nobody said was limited.
+    expect(renderCard(base()).svg).not.toContain('private work not counted');
+  });
+
+  it('is translated, not hardcoded English', () => {
+    expect(renderCard({ ...base(false), lang: 'es' as const }).svg)
+      .toContain('trabajo privado no contado');
+  });
+});

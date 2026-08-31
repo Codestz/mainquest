@@ -136,3 +136,43 @@ jobs:
             exit 1
           fi
           echo "sample cards are current"
+
+  # ---------------------------------------------------------------------------
+  # Does the DEFAULT token actually work?
+  #
+  # `github_token` defaults to GITHUB_TOKEN so the Action installs with no
+  # secret. That rests on a claim about someone else's API — that GITHUB_TOKEN
+  # can read a user's public contributionsCollection — and a claim about an
+  # external service is exactly the kind that quietly stops being true.
+  #
+  # If GitHub ever narrows that scope, this job goes red and we find out. The
+  # alternative is every new user finding out for us.
+  # ---------------------------------------------------------------------------
+  default-token:
+    name: GITHUB_TOKEN renders a real profile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Render with the workflow's own token and nothing else
+        uses: ./
+        id: card
+        with:
+          # No github_token: this is the point of the job.
+          username: ${{ github.repository_owner }}
+          outputs: token-out
+          cards: status
+          motion: animated
+          themes: dark
+
+      - name: It must produce a real card, and admit what it could not read
+        run: |
+          set -euo pipefail
+          test -s token-out/card-dark.svg
+          grep -q '<svg' token-out/card-dark.svg
+          # The honesty half: with no PAT the card must carry the caveat.
+          grep -q 'private work not counted' token-out/card-dark.svg \
+            || { echo "::error::no private-work caveat on a GITHUB_TOKEN render"; exit 1; }
+          # And it must have classified a real person, not fallen back to empty.
+          test -n "${{ steps.card.outputs.character_class }}"
+          echo "class=${{ steps.card.outputs.character_class }} rank=${{ steps.card.outputs.rank }}"

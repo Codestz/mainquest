@@ -141,6 +141,7 @@
     "no_debuffs": "no debuffs",
     "percentile_note": "p = percentile against n={n} sampled accounts",
     "caveat_reviews": "reviews: sparse in sample",
-    "caveat_merges": "merges: proxied by PRs opened"
+    "caveat_merges": "merges: proxied by PRs opened",
+    "caveat_private": "private work not counted (no PAT)"
   }
 }

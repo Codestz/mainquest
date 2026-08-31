@@ -54,11 +54,32 @@ async function main(): Promise<void> {
   const token = input('github_token');
   if (!fixture && !token) {
     fail(
-      'github_token is required. Use a fine-grained PAT with NO repository ' +
-      'access and NO account permissions — contribution counts are an ' +
-      'attribute of the authenticated identity, so there is no permission to ' +
-      'grant. GITHUB_TOKEN will not work: it does not return ' +
-      'restrictedContributionsCount, so private work vanishes from the card.',
+      'No token available. github_token defaults to the workflow\'s own ' +
+      'GITHUB_TOKEN, so this usually means the default was overridden with an ' +
+      'empty value or a secret that does not exist.',
+    );
+  }
+
+  /**
+   * Is this the workflow's own token rather than a PAT?
+   *
+   * `ghs_` is the documented prefix for a GitHub App installation token, which
+   * is what GITHUB_TOKEN is. The check is a heuristic and it is allowed to be:
+   * being wrong prints one caveat that did not need printing, which is the
+   * safe direction. Being wrong the other way would silently under-report
+   * someone's private work, which is not.
+   *
+   * It cannot be inferred from `restricted === 0` instead — plenty of people
+   * genuinely have no private contributions, and telling them their token is
+   * inadequate would be its own kind of wrong.
+   */
+  const ephemeral = !fixture && token.startsWith('ghs_');
+  if (ephemeral) {
+    console.log(
+      '::warning::Running with the workflow\'s GITHUB_TOKEN. Public activity ' +
+      'renders fine, but private contributions cannot be read with it, so the ' +
+      'card will report zero sealed activity and say so. Pass a fine-grained ' +
+      'PAT as github_token to include private work.',
     );
   }
 
@@ -173,6 +194,7 @@ async function main(): Promise<void> {
     prsOpened: profile.prsOpened,
     campaignDay: profile.campaignDay,
     calendarTotal: profile.calendarTotal,
+    privateCounted: !ephemeral,
     ...(lang ? { lang } : {}),
   });
 
