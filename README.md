@@ -186,6 +186,16 @@ not tier 1.
 **Debuffs** — `lone wolf`, `revolving door`, `ivory tower`. The honest half.
 Every good character sheet shows what you are bad at.
 
+### What it doesn't claim
+
+- The percentile distribution is **n=165**, sampled from repository
+  contributors. Enough to be meaningful, small enough that the card prints its
+  own sample size rather than implying more rigour than it has.
+- `merges` is real for a rendered card, but the *scale* it is scored against
+  still uses PRs-opened, because the bulk sampler skips the extra search
+  request. Opened is strictly more than merged, so the proxy flatters
+  everyone — the card says so on every render.
+
 ## Languages
 
 `lang: en | es | pt-BR`. Not translated — **transcreated**: the flavour text is
@@ -223,27 +233,6 @@ what the work was.
 not invent a class from whatever sliver happens to be public. It renders
 `sealed`, keeps the full terrain (the calendar counts private days, so your
 rhythm is real), shows the sealed count, and says *"rhythm known, role not"*.
-
-## Status
-
-**v1.0.0.** The Action works end to end: fetch, classify, render, commit.
-
-Two things are honest about their limits, on the card and here:
-
-- The percentile distribution is **n=165**, sampled from repository
-  contributors. Enough to be meaningful, small enough that the card prints its
-  own sample size.
-- `merges` is real for a rendered card, but the *scale* it is scored against
-  still uses PRs-opened, because the bulk sampler skips the Tier 1 search.
-
-Also known:
-
-- Sprite proportions drift between classes.
-- The status card is ~28 KB against a 25 KB target (40 KB hard limit); the
-  ability card is ~18 KB. Both hold under the 40-element animation budget,
-  which is now enforced by a test across every fixture, day and theme.
-
-See [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Licence
 

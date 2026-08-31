@@ -33,20 +33,12 @@ npm run sheet          # screen candidates -> selection JSON
                        # selection JSON -> data/charges.v1.json -> credits below
 ```
 
-Contributors whose work may end up in the table (full upstream list):
-
-Lorc · Delapouite · John Colburn · Felbrigg · John Redman · Carl Olsen · Sbed ·
-PriorBlue · Willdabeast · Viscious Speed (CC0) · Lord Berandas · Irongamer ·
-HeavenlyDog · Lucas · Faithtoken · Skoll · Andy Meneely · Cathelineau ·
-Kier Heyl · Aussiesim · Sparker · Zeromancer (CC0) · Rihlsul · Quoting ·
-Guard13007 · DarkZaitzev · SpencerDub · GeneralAce135 · Zajkonur · Catsu ·
-Starseeker · Pepijn Poolman · Pierre Leducq · Caro Asercion · SeregaCthtuf
-
 ## Contributors represented in the frozen charge table (v1, 192 icons)
 
 CC BY requires naming the author — a blanket "icons by game-icons.net" does not
-satisfy it. These are the contributors whose work is actually in
-`data/charges.v1.json`:
+satisfy it. The charge table is frozen, so this list is exhaustive rather than
+provisional: these are the only upstream contributors whose work is in
+`data/charges.v1.json`.
 
 | Contributor | Icons |
 |---|---|
@@ -65,15 +57,33 @@ Upstream URLs are in `license.txt` of the game-icons repository. Regenerate this
 table whenever the charge table version changes.
 
 ## Sprites
-Sources under consideration:
 
-| Source | License | Notes |
-|---|---|---|
-| Kenney (kenney.nl) | CC0 | No attribution required. Preferred default. |
-| Superdark 16×16 NPC pack (itch.io) | CC0 | Supplement to 0x72's tileset |
-| 0x72 DungeonTileset II | CC0 | Excellent but heavily used — avoid |
-| OpenGameArt (CC0 filter only) | CC0 | Verify per asset |
+**No third-party sprite assets are used.** Nothing in this section requires
+attribution to anyone outside this project.
 
-**Do not use** Liberated Pixel Cup sets — CC-BY-SA / GPL, copyleft.
+The thirteen class sprites and eight familiars in `data/sprites.v3.json` were
+generated for this project with an image model and then processed into real
+pixel art by `scripts/pixelate.py`:
 
-**Rule:** check the LICENSE file inside each download. Tags lie.
+1. key out the magenta background → transparency
+2. crop to the sprite's bounding box → consistent framing across classes
+3. downsample with NEAREST + area vote → a true pixel grid
+4. quantise to one fixed shared palette → the set reads as one game
+
+Step 4 is the load-bearing one. Per-image quantisation gives thirteen sprites
+thirteen palettes, and the set stops looking like a single game.
+
+They ship as base64 PNG data URIs inside the JSON, because an SVG loaded
+through an `<img>` tag cannot fetch anything external.
+
+### If you swap them
+
+Should hand-drawn or third-party sprites ever replace these, the licence of the
+replacement goes here **and** into the rendered SVG's `<metadata>` block — a
+notice in this file does not travel with a card embedded in someone else's
+README. See *How attribution travels* above.
+
+Two rules that were established while sourcing candidates and still apply:
+
+- **Do not use Liberated Pixel Cup sets** — CC-BY-SA / GPL, copyleft.
+- **Check the LICENSE file inside each download.** Tags lie.
